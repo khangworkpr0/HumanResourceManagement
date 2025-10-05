@@ -1,5 +1,5 @@
 const express = require('express');
-const { body } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const {
   register,
   login,
@@ -7,6 +7,19 @@ const {
   updateProfile
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+
+// Validation middleware
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
+  }
+  next();
+};
 
 const router = express.Router();
 
@@ -22,7 +35,7 @@ router.post('/register', [
   body('phone').notEmpty().withMessage('Phone is required'),
   body('address').notEmpty().withMessage('Address is required'),
   body('salary').isNumeric().withMessage('Salary must be a number')
-], register);
+], validateRequest, register);
 
 // @route   POST /api/auth/login
 // @desc    Login user
@@ -30,7 +43,7 @@ router.post('/register', [
 router.post('/login', [
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('password').notEmpty().withMessage('Password is required')
-], login);
+], validateRequest, login);
 
 // @route   GET /api/auth/profile
 // @desc    Get current user profile
@@ -45,6 +58,6 @@ router.put('/profile', protect, [
   body('email').optional().isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('phone').optional().notEmpty().withMessage('Phone cannot be empty'),
   body('address').optional().notEmpty().withMessage('Address cannot be empty')
-], updateProfile);
+], validateRequest, updateProfile);
 
 module.exports = router;

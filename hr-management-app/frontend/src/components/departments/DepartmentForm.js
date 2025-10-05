@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/axios';
 
 const DepartmentForm = () => {
   const { id } = useParams();
@@ -28,7 +28,7 @@ const DepartmentForm = () => {
 
   const fetchManagers = async () => {
     try {
-      const response = await axios.get('/api/employees');
+      const response = await api.get('/api/employees');
       setManagers(response.data.data.filter(emp => emp.role === 'hr' || emp.role === 'admin'));
     } catch (error) {
       console.error('Error fetching managers:', error);
@@ -37,7 +37,7 @@ const DepartmentForm = () => {
 
   const fetchDepartment = async () => {
     try {
-      const response = await axios.get(`/api/departments/${id}`);
+      const response = await api.get(`/api/departments/${id}`);
       const department = response.data.data;
       setFormData({
         name: department.name,
@@ -63,9 +63,9 @@ const DepartmentForm = () => {
 
     try {
       if (isEdit) {
-        await axios.put(`/api/departments/${id}`, formData);
+        await api.put(`/api/departments/${id}`, formData);
       } else {
-        await axios.post('/api/departments', formData);
+        await api.post('/api/departments', formData);
       }
 
       navigate('/departments');
@@ -80,11 +80,11 @@ const DepartmentForm = () => {
   return (
     <div className="container" style={{ maxWidth: '600px', marginTop: '2rem' }}>
       <div className="card">
-        <h2>{isEdit ? 'Edit Department' : 'Add New Department'}</h2>
+        <h2>{isEdit ? 'Sửa Phòng Ban' : 'Thêm Phòng Ban Mới'}</h2>
 
         <form onSubmit={onSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="name">Department Name</label>
+            <label className="form-label" htmlFor="name">Tên Phòng Ban</label>
             <input
               type="text"
               className="form-input"
@@ -97,7 +97,7 @@ const DepartmentForm = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="description">Description</label>
+            <label className="form-label" htmlFor="description">Mô Tả</label>
             <textarea
               className="form-input"
               id="description"
@@ -111,7 +111,7 @@ const DepartmentForm = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="manager">Manager</label>
+              <label className="form-label" htmlFor="manager">Trưởng Phòng</label>
               <select
                 className="form-input"
                 id="manager"
@@ -120,7 +120,7 @@ const DepartmentForm = () => {
                 onChange={onChange}
                 required
               >
-                <option value="">Select Manager</option>
+                <option value="">Chọn Trưởng Phòng</option>
                 {managers.map(manager => (
                   <option key={manager._id} value={manager._id}>
                     {manager.name} - {manager.position}
@@ -130,7 +130,7 @@ const DepartmentForm = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="location">Location</label>
+              <label className="form-label" htmlFor="location">Địa Điểm</label>
               <input
                 type="text"
                 className="form-input"
@@ -145,7 +145,7 @@ const DepartmentForm = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="budget">Budget</label>
+              <label className="form-label" htmlFor="budget">Ngân Sách</label>
               <input
                 type="number"
                 className="form-input"
@@ -159,7 +159,7 @@ const DepartmentForm = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="isActive">Status</label>
+              <label className="form-label" htmlFor="isActive">Trạng Thái</label>
               <select
                 className="form-input"
                 id="isActive"
@@ -168,8 +168,8 @@ const DepartmentForm = () => {
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
                 required
               >
-                <option value={true}>Active</option>
-                <option value={false}>Inactive</option>
+                <option value={true}>Hoạt Động</option>
+                <option value={false}>Không Hoạt Động</option>
               </select>
             </div>
           </div>
@@ -180,14 +180,14 @@ const DepartmentForm = () => {
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Saving...' : (isEdit ? 'Update Department' : 'Add Department')}
+              {loading ? 'Đang lưu...' : (isEdit ? 'Cập Nhật Phòng Ban' : 'Thêm Phòng Ban')}
             </button>
             <button
               type="button"
               className="btn btn-secondary"
               onClick={() => navigate('/departments')}
             >
-              Cancel
+              Hủy
             </button>
           </div>
         </form>

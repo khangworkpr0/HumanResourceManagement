@@ -47,7 +47,7 @@ const Register = () => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      alert('Mật khẩu không khớp');
       return;
     }
 
@@ -58,9 +58,10 @@ const Register = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '600px', marginTop: '2rem' }}>
-      <div className="card">
-        <h2 className="text-center mb-20">Register</h2>
+    <div className="auth-container">
+      <div className="auth-card" style={{ maxWidth: '700px' }}>
+        <h2 className="auth-title">Tạo Tài Khoản</h2>
+        <p className="auth-subtitle">Tham gia hệ thống quản lý nhân sự ngay hôm nay</p>
         
         {error && (
           <div className="alert alert-error">
@@ -69,9 +70,9 @@ const Register = () => {
         )}
 
         <form onSubmit={onSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="name">Full Name</label>
+              <label className="form-label" htmlFor="name">Họ và Tên</label>
               <input
                 type="text"
                 className="form-input"
@@ -79,12 +80,13 @@ const Register = () => {
                 name="name"
                 value={name}
                 onChange={onChange}
+                placeholder="Enter your full name"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
+              <label className="form-label" htmlFor="email">Địa Chỉ Email</label>
               <input
                 type="email"
                 className="form-input"
@@ -92,14 +94,15 @@ const Register = () => {
                 name="email"
                 value={email}
                 onChange={onChange}
+                placeholder="Enter your email"
                 required
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
+              <label className="form-label" htmlFor="password">Mật Khẩu</label>
               <input
                 type="password"
                 className="form-input"
@@ -107,12 +110,13 @@ const Register = () => {
                 name="password"
                 value={password}
                 onChange={onChange}
+                placeholder="Create a password"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+              <label className="form-label" htmlFor="confirmPassword">Xác Nhận Mật Khẩu</label>
               <input
                 type="password"
                 className="form-input"
@@ -120,14 +124,15 @@ const Register = () => {
                 name="confirmPassword"
                 value={confirmPassword}
                 onChange={onChange}
+                placeholder="Confirm your password"
                 required
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="department">Department</label>
+              <label className="form-label" htmlFor="department">Phòng Ban</label>
               <input
                 type="text"
                 className="form-input"
@@ -135,12 +140,13 @@ const Register = () => {
                 name="department"
                 value={department}
                 onChange={onChange}
+                placeholder="e.g., Engineering, Marketing"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="position">Position</label>
+              <label className="form-label" htmlFor="position">Chức Vụ</label>
               <input
                 type="text"
                 className="form-input"
@@ -148,14 +154,15 @@ const Register = () => {
                 name="position"
                 value={position}
                 onChange={onChange}
+                placeholder="e.g., Software Developer, Manager"
                 required
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="phone">Phone</label>
+              <label className="form-label" htmlFor="phone">Số Điện Thoại</label>
               <input
                 type="tel"
                 className="form-input"
@@ -163,12 +170,13 @@ const Register = () => {
                 name="phone"
                 value={phone}
                 onChange={onChange}
+                placeholder="Enter your phone number"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="salary">Salary</label>
+              <label className="form-label" htmlFor="salary">Lương</label>
               <input
                 type="number"
                 className="form-input"
@@ -176,13 +184,14 @@ const Register = () => {
                 name="salary"
                 value={salary}
                 onChange={onChange}
+                placeholder="Enter your salary"
                 required
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="address">Address</label>
+            <label className="form-label" htmlFor="address">Địa Chỉ</label>
             <textarea
               className="form-input"
               id="address"
@@ -190,17 +199,18 @@ const Register = () => {
               value={address}
               onChange={onChange}
               rows="3"
+              placeholder="Enter your address"
               required
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            Register
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+            Tạo Tài Khoản
           </button>
         </form>
 
         <p className="text-center mt-20">
-          Already have an account? <Link to="/login">Login here</Link>
+          Đã có tài khoản? <Link to="/login" className="auth-link">Đăng nhập tại đây</Link>
         </p>
       </div>
     </div>

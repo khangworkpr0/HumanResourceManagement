@@ -5,13 +5,57 @@ const User = require('../models/User');
 // @access  Private (HR and Admin only)
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await User.find({ role: { $ne: 'admin' } })
+    const { search, department, position, page = 1, limit = 10 } = req.query;
+    
+    // Build search query
+    let query = { role: { $ne: 'admin' } };
+    
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { position: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Filter by department
+    if (department) {
+      query.department = department;
+    }
+    
+    // Filter by position
+    if (position) {
+      query.position = { $regex: position, $options: 'i' };
+    }
+
+    // Calculate pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const total = await User.countDocuments(query);
+
+    const employees = await User.find(query)
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
 
     res.status(200).json({
       success: true,
       count: employees.length,
+      total,
+      currentPage: pageNum,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
       data: employees
     });
   } catch (error) {
@@ -72,6 +116,7 @@ const createEmployee = async (req, res) => {
       phone,
       address,
       salary,
+      hireDate,
       role = 'employee'
     } = req.body;
 
@@ -93,6 +138,7 @@ const createEmployee = async (req, res) => {
       phone,
       address,
       salary,
+      hireDate: hireDate || new Date(),
       role
     });
 
@@ -123,8 +169,8 @@ const updateEmployee = async (req, res) => {
       phone,
       address,
       salary,
-      role,
-      isActive
+      hireDate,
+      role
     } = req.body;
 
     const employee = await User.findByIdAndUpdate(
@@ -137,8 +183,8 @@ const updateEmployee = async (req, res) => {
         phone: phone || undefined,
         address: address || undefined,
         salary: salary || undefined,
-        role: role || undefined,
-        isActive: isActive !== undefined ? isActive : undefined
+        hireDate: hireDate || undefined,
+        role: role || undefined
       },
       {
         new: true,
@@ -218,11 +264,54 @@ const getEmployeesByDepartment = async (req, res) => {
   }
 };
 
+// @desc    Upload employee profile image
+// @route   PUT /api/employees/:id/profile-image
+// @access  Private (HR and Admin only)
+const uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image uploaded'
+      });
+    }
+
+    // Create URL for the uploaded image
+    const imageUrl = `${req.protocol}://${req.get('host')}/${req.file.path}`;
+    
+    const employee = await User.findByIdAndUpdate(
+      req.params.id,
+      { profileImage: imageUrl },
+      { new: true }
+    ).select('-password');
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile image uploaded successfully',
+      data: employee
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getEmployeesByDepartment
+  getEmployeesByDepartment,
+  uploadProfileImage
 };

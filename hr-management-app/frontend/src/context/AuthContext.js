@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
+import api from '../utils/axios';
 
 const AuthContext = createContext();
 
@@ -43,7 +43,7 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         loading: false,
         user: null,
-        error: action.payload
+        error: action.payload || null
       };
     case 'CLEAR_ERRORS':
       return {
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     if (localStorage.token) {
       loadUser();
     } else {
-      dispatch({ type: 'AUTH_ERROR' });
+      dispatch({ type: 'CLEAR_ERRORS' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -72,9 +72,12 @@ export const AuthProvider = ({ children }) => {
   // Set auth token in axios headers - memoized
   const setAuthToken = useCallback((token) => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Also set in localStorage for request interceptor
+      localStorage.setItem('token', token);
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
+      localStorage.removeItem('token');
     }
   }, []);
 
@@ -85,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await axios.get('/api/auth/profile');
+      const res = await api.get('/api/auth/profile');
       dispatch({
         type: 'USER_LOADED',
         payload: res.data.data.user
@@ -101,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   // Register user - memoized
   const register = useCallback(async (formData) => {
     try {
-      const res = await axios.post('/api/auth/register', formData);
+      const res = await api.post('/api/auth/register', formData);
       dispatch({
         type: 'REGISTER_SUCCESS',
         payload: res.data.data
@@ -120,12 +123,28 @@ export const AuthProvider = ({ children }) => {
   // Login user - memoized
   const login = useCallback(async (formData) => {
     try {
-      const res = await axios.post('/api/auth/login', formData);
+      const res = await api.post('/api/auth/login', formData);
+      const token = res.data.data.token;
+      
+      // Set token in axios headers immediately
+      setAuthToken(token);
+      
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: res.data.data
       });
-      loadUser();
+      
+      // Load user profile
+      try {
+        const profileRes = await api.get('/api/auth/profile');
+        dispatch({
+          type: 'USER_LOADED',
+          payload: profileRes.data.data.user
+        });
+      } catch (profileError) {
+        console.error('Error loading user profile:', profileError);
+      }
+      
       return { success: true };
     } catch (error) {
       dispatch({
@@ -134,7 +153,7 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: false, error: error.response?.data?.message };
     }
-  }, [loadUser]);
+  }, [setAuthToken]);
 
   // Logout user - memoized
   const logout = useCallback(() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/axios';
 
 const DepartmentList = () => {
   const [departments, setDepartments] = useState([]);
@@ -13,7 +13,7 @@ const DepartmentList = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/api/departments');
+      const response = await api.get('/api/departments');
       setDepartments(response.data.data);
     } catch (error) {
       setError('Failed to fetch departments');
@@ -24,12 +24,12 @@ const DepartmentList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this department?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa phòng ban này?')) {
       try {
-        await axios.delete(`/api/departments/${id}`);
+        await api.delete(`/api/departments/${id}`);
         setDepartments(departments.filter(dept => dept._id !== id));
       } catch (error) {
-        alert('Failed to delete department');
+        alert('Không thể xóa phòng ban');
         console.error('Error deleting department:', error);
       }
     }
@@ -38,7 +38,7 @@ const DepartmentList = () => {
   if (loading) {
     return (
       <div className="text-center" style={{ padding: '2rem' }}>
-        Loading departments...
+        Đang tải danh sách phòng ban...
       </div>
     );
   }
@@ -54,15 +54,15 @@ const DepartmentList = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Departments</h1>
+        <h1>Phòng Ban</h1>
         <Link to="/departments/new" className="btn btn-primary">
-          Add New Department
+          Thêm Phòng Ban Mới
         </Link>
       </div>
 
       {departments.length === 0 ? (
         <div className="card">
-          <p className="text-center">No departments found.</p>
+          <p className="text-center">Không tìm thấy phòng ban nào.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
@@ -72,15 +72,15 @@ const DepartmentList = () => {
               <p style={{ color: '#666', marginBottom: '1rem' }}>{department.description}</p>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong>Manager:</strong> {department.manager?.name || 'Not assigned'}
+                <strong>Trưởng Phòng:</strong> {department.manager?.name || 'Chưa được phân công'}
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong>Location:</strong> {department.location}
+                <strong>Địa Điểm:</strong> {department.location}
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong>Budget:</strong> ${department.budget?.toLocaleString()}
+                <strong>Ngân Sách:</strong> ${department.budget?.toLocaleString()}
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
@@ -91,7 +91,7 @@ const DepartmentList = () => {
                   backgroundColor: department.isActive ? '#d4edda' : '#f8d7da',
                   color: department.isActive ? '#155724' : '#721c24'
                 }}>
-                  {department.isActive ? 'Active' : 'Inactive'}
+                  {department.isActive ? 'Hoạt Động' : 'Không Hoạt Động'}
                 </span>
               </div>
 
@@ -101,14 +101,14 @@ const DepartmentList = () => {
                   className="btn btn-secondary"
                   style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
                 >
-                  Edit
+                  Sửa
                 </Link>
                 <button
                   onClick={() => handleDelete(department._id)}
                   className="btn btn-danger"
                   style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
                 >
-                  Delete
+                  Xóa
                 </button>
               </div>
             </div>

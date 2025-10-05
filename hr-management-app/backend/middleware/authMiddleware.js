@@ -33,12 +33,8 @@ const protect = async (req, res, next) => {
         });
       }
 
-      if (!user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Account is deactivated'
-        });
-      }
+      // Since we removed isActive field, all users are considered active
+      // No need to check isActive anymore
 
       req.user = user;
       next();

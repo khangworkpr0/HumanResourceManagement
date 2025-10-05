@@ -24,24 +24,23 @@ const Navbar = () => {
         alignItems: 'center'
       }}>
         <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '1.5rem', fontWeight: 'bold' }}>
-          HR Management
+          Quản Lý Nhân Sự
         </Link>
 
         {isAuthenticated ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <span>Welcome, {user?.name}</span>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
-                Dashboard
+                Trang Chủ
               </Link>
               <Link to="/employees" style={{ color: 'white', textDecoration: 'none' }}>
-                Employees
+                Nhân Viên
               </Link>
               <Link to="/departments" style={{ color: 'white', textDecoration: 'none' }}>
-                Departments
+                Phòng Ban
               </Link>
               <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>
-                Profile
+                Hồ Sơ
               </Link>
               <button 
                 onClick={handleLogout}
@@ -54,17 +53,17 @@ const Navbar = () => {
                   cursor: 'pointer'
                 }}
               >
-                Logout
+                Đăng Xuất
               </button>
             </div>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '1rem' }}>
             <Link to="/login" style={{ color: 'white', textDecoration: 'none' }}>
-              Login
+              Đăng Nhập
             </Link>
             <Link to="/register" style={{ color: 'white', textDecoration: 'none' }}>
-              Register
+              Đăng Ký
             </Link>
           </div>
         )}
