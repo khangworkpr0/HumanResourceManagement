@@ -28,7 +28,7 @@ const employeeFileSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['contract', 'personal_info', 'certificate', 'other'],
+    enum: ['resume', 'health', 'diploma', 'certificate', 'other'],
     default: 'other'
   },
   description: {

@@ -422,56 +422,212 @@ const EmployeeList = () => {
 
             {/* Detailed Information */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              {/* Thông tin cá nhân */}
               <div>
-                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>Thông Tin Cá Nhân</h3>
+                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>👤 Thông Tin Cá Nhân</h3>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Ngày Vào Làm:</strong><br />
+                  <strong>Năm Sinh:</strong><br />
                   <span style={{ color: '#666' }}>
-                    {formatDate(selectedEmployee.hireDate || selectedEmployee.createdAt)}
+                    {selectedEmployee.birthYear || 'Chưa cập nhật'}
                   </span>
                 </div>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Địa Chỉ:</strong><br />
+                  <strong>Số CCCD:</strong><br />
                   <span style={{ color: '#666' }}>
-                    {selectedEmployee.address}
+                    {selectedEmployee.cccd || 'Chưa cập nhật'}
                   </span>
                 </div>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Lương:</strong><br />
-                  <span style={{ color: '#666', fontWeight: 'bold' }}>
-                    ${selectedEmployee.salary?.toLocaleString()}
+                  <strong>Ngày Cấp CCCD:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.cccdIssueDate ? formatDate(selectedEmployee.cccdIssueDate) : 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Nơi Cấp CCCD:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.cccdIssuePlace || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Thường Trú:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.permanentAddress || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Nơi Cấp Khai Sinh:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.birthPlace || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Mã Số BHXH:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.socialInsuranceNumber || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Mã Số BHYT:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.healthInsuranceNumber || 'Chưa cập nhật'}
                   </span>
                 </div>
               </div>
 
+              {/* Thông tin công việc */}
               <div>
-                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>Thông Tin Công Việc</h3>
+                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>💼 Thông Tin Công Việc</h3>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Chức Vụ:</strong><br />
+                  <strong>Bộ Phận:</strong><br />
                   <span style={{ color: '#666' }}>
-                    {selectedEmployee.position}
+                    {selectedEmployee.department || 'Chưa cập nhật'}
                   </span>
                 </div>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Phòng Ban:</strong><br />
+                  <strong>Chức Danh:</strong><br />
                   <span style={{ color: '#666' }}>
-                    {selectedEmployee.department}
+                    {selectedEmployee.position || 'Chưa cập nhật'}
                   </span>
                 </div>
+                
                 <div style={{ marginBottom: '1rem' }}>
-                  <strong>Vai Trò:</strong><br />
+                  <strong>Trình Độ:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.educationLevel || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Chuyên Ngành:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.major || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Trường Đào Tạo:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.school || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Ngày Nhận Việc:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.startDate ? formatDate(selectedEmployee.startDate) : 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Ngày Chính Thức:</strong><br />
+                  <span style={{ color: '#666' }}>
+                    {selectedEmployee.officialDate ? formatDate(selectedEmployee.officialDate) : 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Loại HĐLĐ:</strong><br />
                   <span style={{ 
-                    color: '#666', 
-                    textTransform: 'capitalize',
+                    color: '#666',
                     padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
                     backgroundColor: '#f0f0f0'
                   }}>
-                    {selectedEmployee.role}
+                    {selectedEmployee.contractType || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Mức Lương:</strong><br />
+                  <span style={{ color: '#666', fontWeight: 'bold' }}>
+                    {selectedEmployee.salary ? `${selectedEmployee.salary.toLocaleString()} VNĐ` : 'Chưa cập nhật'}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Phụ cấp */}
+            {selectedEmployee.allowances && (
+              <div style={{ marginTop: '2rem' }}>
+                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>💰 Phụ Cấp</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Cơm Ca</strong><br />
+                    <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                      {selectedEmployee.allowances.meal ? `${selectedEmployee.allowances.meal.toLocaleString()} VNĐ` : '0 VNĐ'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Xăng</strong><br />
+                    <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                      {selectedEmployee.allowances.transport ? `${selectedEmployee.allowances.transport.toLocaleString()} VNĐ` : '0 VNĐ'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Kiêm Nhiệm</strong><br />
+                    <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                      {selectedEmployee.allowances.additional ? `${selectedEmployee.allowances.additional.toLocaleString()} VNĐ` : '0 VNĐ'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Độc Hại</strong><br />
+                    <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                      {selectedEmployee.allowances.hazardous ? `${selectedEmployee.allowances.hazardous.toLocaleString()} VNĐ` : '0 VNĐ'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Hồ sơ */}
+            {selectedEmployee.documents && (
+              <div style={{ marginTop: '2rem' }}>
+                <h3 style={{ color: '#1976d2', marginBottom: '1rem' }}>📁 Hồ Sơ</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Sơ Yếu Lý Lịch</strong><br />
+                    <span style={{ color: selectedEmployee.documents.resume ? '#28a745' : '#dc3545' }}>
+                      {selectedEmployee.documents.resume ? '✅ Đã có' : '❌ Chưa có'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Giấy Khám Sức Khỏe</strong><br />
+                    <span style={{ color: selectedEmployee.documents.healthCertificate ? '#28a745' : '#dc3545' }}>
+                      {selectedEmployee.documents.healthCertificate ? '✅ Đã có' : '❌ Chưa có'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Bằng Cấp</strong><br />
+                    <span style={{ color: selectedEmployee.documents.diploma ? '#28a745' : '#dc3545' }}>
+                      {selectedEmployee.documents.diploma ? '✅ Đã có' : '❌ Chưa có'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong style={{ color: '#666', fontSize: '0.9rem' }}>Chứng Chỉ Hành Nghề</strong><br />
+                    <span style={{ color: selectedEmployee.documents.professionalCertificate ? '#28a745' : '#dc3545' }}>
+                      {selectedEmployee.documents.professionalCertificate ? '✅ Đã có' : '❌ Chưa có'}
+                    </span>
+                  </div>
+                </div>
+                {selectedEmployee.documents.practiceScope && (
+                  <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e3f2fd', borderRadius: '8px' }}>
+                    <strong style={{ color: '#1976d2' }}>Phạm Vi Hành Nghề:</strong><br />
+                    <span style={{ color: '#666' }}>{selectedEmployee.documents.practiceScope}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div style={{ 

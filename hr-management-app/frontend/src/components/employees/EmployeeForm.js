@@ -8,15 +8,47 @@ const EmployeeForm = () => {
   const isEdit = Boolean(id);
 
   const [formData, setFormData] = useState({
+    // Thông tin cơ bản
     name: '',
     email: '',
     password: '',
+    
+    // Thông tin cá nhân
+    birthYear: '',
+    cccd: '',
+    cccdIssueDate: '',
+    cccdIssuePlace: '',
+    phone: '',
+    permanentAddress: '',
+    birthPlace: '',
+    socialInsuranceNumber: '',
+    healthInsuranceNumber: '',
+    
+    // Thông tin công việc
     department: '',
     position: '',
-    phone: '',
-    address: '',
+    educationLevel: '',
+    major: '',
+    school: '',
+    startDate: '',
+    officialDate: '',
+    contractType: '',
     salary: '',
-    hireDate: ''
+    allowances: {
+      meal: '',
+      transport: '',
+      additional: '',
+      hazardous: ''
+    },
+    
+    // Hồ sơ
+    documents: {
+      resume: '',
+      healthCertificate: '',
+      diploma: '',
+      professionalCertificate: '',
+      practiceScope: ''
+    }
   });
 
   const [loading, setLoading] = useState(false);
@@ -48,15 +80,47 @@ const EmployeeForm = () => {
       const response = await api.get(`/api/employees/${id}`);
       const employee = response.data.data;
       setFormData({
-        name: employee.name,
-        email: employee.email,
+        // Thông tin cơ bản
+        name: employee.name || '',
+        email: employee.email || '',
         password: '',
-        department: employee.department,
-        position: employee.position,
-        phone: employee.phone,
-        address: employee.address,
-        salary: employee.salary,
-        hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : ''
+        
+        // Thông tin cá nhân
+        birthYear: employee.birthYear || '',
+        cccd: employee.cccd || '',
+        cccdIssueDate: employee.cccdIssueDate ? employee.cccdIssueDate.split('T')[0] : '',
+        cccdIssuePlace: employee.cccdIssuePlace || '',
+        phone: employee.phone || '',
+        permanentAddress: employee.permanentAddress || '',
+        birthPlace: employee.birthPlace || '',
+        socialInsuranceNumber: employee.socialInsuranceNumber || '',
+        healthInsuranceNumber: employee.healthInsuranceNumber || '',
+        
+        // Thông tin công việc
+        department: employee.department || '',
+        position: employee.position || '',
+        educationLevel: employee.educationLevel || '',
+        major: employee.major || '',
+        school: employee.school || '',
+        startDate: employee.startDate ? employee.startDate.split('T')[0] : '',
+        officialDate: employee.officialDate ? employee.officialDate.split('T')[0] : '',
+        contractType: employee.contractType || '',
+        salary: employee.salary || '',
+        allowances: employee.allowances || {
+          meal: '',
+          transport: '',
+          additional: '',
+          hazardous: ''
+        },
+        
+        // Hồ sơ
+        documents: employee.documents || {
+          resume: '',
+          healthCertificate: '',
+          diploma: '',
+          professionalCertificate: '',
+          practiceScope: ''
+        }
       });
       
       // Set profile image if exists
@@ -139,7 +203,7 @@ const EmployeeForm = () => {
     }
   };
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = async (e, category) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -147,24 +211,31 @@ const EmployeeForm = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('category', 'personal_info');
-      formData.append('description', 'Employee document');
+      formData.append('category', category);
 
       await api.post(`/api/employees/${id}/files`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Refresh files list
       fetchFiles();
-      alert('Tải file lên thành công');
+      alert(`Tải ${getCategoryName(category)} lên thành công`);
     } catch (error) {
       alert('Không thể tải file lên');
       console.error('Error uploading file:', error);
     } finally {
       setUploading(false);
     }
+  };
+
+  const getCategoryName = (category) => {
+    const categoryNames = {
+      'resume': 'Sơ Yếu Lý Lịch',
+      'health': 'Giấy Khám Sức Khỏe',
+      'diploma': 'Bằng Cấp',
+      'certificate': 'Chứng Chỉ Hành Nghề',
+      'other': 'Tài Liệu Khác'
+    };
+    return categoryNames[category] || 'Tài Liệu';
   };
 
   const handleFileDownload = async (fileId) => {
@@ -180,9 +251,7 @@ const EmployeeForm = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
     } catch (error) {
-      alert('Failed to download file');
       console.error('Error downloading file:', error);
     }
   };
@@ -201,7 +270,7 @@ const EmployeeForm = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '800px', marginTop: '2rem' }}>
+    <div className="container" style={{ maxWidth: '1200px', marginTop: '2rem' }}>
       <div className="card">
         <h2>{isEdit ? 'Sửa Nhân Viên' : 'Thêm Nhân Viên Mới'}</h2>
 
@@ -239,9 +308,14 @@ const EmployeeForm = () => {
             </div>
           </div>
 
+          {/* Thông tin cơ bản */}
+          <h3 style={{ color: '#1976d2', marginBottom: '1rem', borderBottom: '2px solid #1976d2', paddingBottom: '0.5rem' }}>
+            📋 Thông Tin Cơ Bản
+          </h3>
+          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="name">Họ và Tên</label>
+              <label className="form-label" htmlFor="name">Họ và Tên *</label>
               <input
                 type="text"
                 className="form-input"
@@ -254,7 +328,7 @@ const EmployeeForm = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
+              <label className="form-label" htmlFor="email">Email *</label>
               <input
                 type="email"
                 className="form-input"
@@ -269,7 +343,7 @@ const EmployeeForm = () => {
 
           {!isEdit && (
             <div className="form-group">
-              <label className="form-label" htmlFor="password">Mật Khẩu</label>
+              <label className="form-label" htmlFor="password">Mật Khẩu *</label>
               <input
                 type="password"
                 className="form-input"
@@ -277,14 +351,149 @@ const EmployeeForm = () => {
                 name="password"
                 value={formData.password}
                 onChange={onChange}
-                required={!isEdit}
+                required
               />
             </div>
           )}
 
+          {/* Thông tin cá nhân */}
+          <h3 style={{ color: '#1976d2', marginBottom: '1rem', borderBottom: '2px solid #1976d2', paddingBottom: '0.5rem', marginTop: '2rem' }}>
+            👤 Thông Tin Cá Nhân
+          </h3>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="department">Phòng Ban</label>
+              <label className="form-label" htmlFor="birthYear">Năm Sinh *</label>
+              <input
+                type="number"
+                className="form-input"
+                id="birthYear"
+                name="birthYear"
+                value={formData.birthYear}
+                onChange={onChange}
+                min="1950"
+                max="2010"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="cccd">Số CCCD *</label>
+              <input
+                type="text"
+                className="form-input"
+                id="cccd"
+                name="cccd"
+                value={formData.cccd}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="cccdIssueDate">Ngày Cấp CCCD *</label>
+              <input
+                type="date"
+                className="form-input"
+                id="cccdIssueDate"
+                name="cccdIssueDate"
+                value={formData.cccdIssueDate}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="cccdIssuePlace">Nơi Cấp CCCD *</label>
+              <input
+                type="text"
+                className="form-input"
+                id="cccdIssuePlace"
+                name="cccdIssuePlace"
+                value={formData.cccdIssuePlace}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="phone">Số Điện Thoại *</label>
+              <input
+                type="tel"
+                className="form-input"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="socialInsuranceNumber">Mã Số BHXH</label>
+              <input
+                type="text"
+                className="form-input"
+                id="socialInsuranceNumber"
+                name="socialInsuranceNumber"
+                value={formData.socialInsuranceNumber}
+                onChange={onChange}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="healthInsuranceNumber">Mã Số BHYT</label>
+              <input
+                type="text"
+                className="form-input"
+                id="healthInsuranceNumber"
+                name="healthInsuranceNumber"
+                value={formData.healthInsuranceNumber}
+                onChange={onChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="birthPlace">Nơi Cấp Khai Sinh/Nguyên Quán *</label>
+              <input
+                type="text"
+                className="form-input"
+                id="birthPlace"
+                name="birthPlace"
+                value={formData.birthPlace}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="permanentAddress">Thường Trú *</label>
+            <textarea
+              className="form-input"
+              id="permanentAddress"
+              name="permanentAddress"
+              value={formData.permanentAddress}
+              onChange={onChange}
+              rows="2"
+              required
+            />
+          </div>
+
+          {/* Thông tin công việc */}
+          <h3 style={{ color: '#1976d2', marginBottom: '1rem', borderBottom: '2px solid #1976d2', paddingBottom: '0.5rem', marginTop: '2rem' }}>
+            💼 Thông Tin Công Việc
+          </h3>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="department">Bộ Phận *</label>
               <select
                 className="form-input"
                 id="department"
@@ -293,8 +502,8 @@ const EmployeeForm = () => {
                 onChange={onChange}
                 required
               >
-                <option value="">Select Department</option>
-                {departments.map(dept => (
+                <option value="">Chọn Bộ Phận</option>
+                {departments.map((dept) => (
                   <option key={dept._id} value={dept.name}>
                     {dept.name}
                   </option>
@@ -303,7 +512,7 @@ const EmployeeForm = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="position">Chức Vụ</label>
+              <label className="form-label" htmlFor="position">Chức Danh *</label>
               <input
                 type="text"
                 className="form-input"
@@ -318,20 +527,104 @@ const EmployeeForm = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="phone">Số Điện Thoại</label>
-              <input
-                type="tel"
+              <label className="form-label" htmlFor="educationLevel">Trình Độ *</label>
+              <select
                 className="form-input"
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                id="educationLevel"
+                name="educationLevel"
+                value={formData.educationLevel}
+                onChange={onChange}
+                required
+              >
+                <option value="">Chọn Trình Độ</option>
+                <option value="Tiểu học">Tiểu học</option>
+                <option value="THCS">Trung học cơ sở</option>
+                <option value="THPT">Trung học phổ thông</option>
+                <option value="Trung cấp">Trung cấp</option>
+                <option value="Cao đẳng">Cao đẳng</option>
+                <option value="Đại học">Đại học</option>
+                <option value="Thạc sĩ">Thạc sĩ</option>
+                <option value="Tiến sĩ">Tiến sĩ</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="major">Chuyên Ngành *</label>
+              <input
+                type="text"
+                className="form-input"
+                id="major"
+                name="major"
+                value={formData.major}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="school">Trường Đào Tạo *</label>
+            <input
+              type="text"
+              className="form-input"
+              id="school"
+              name="school"
+              value={formData.school}
+              onChange={onChange}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="startDate">Ngày Nhận Việc *</label>
+              <input
+                type="date"
+                className="form-input"
+                id="startDate"
+                name="startDate"
+                value={formData.startDate}
                 onChange={onChange}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="salary">Lương</label>
+              <label className="form-label" htmlFor="officialDate">Ngày Chính Thức *</label>
+              <input
+                type="date"
+                className="form-input"
+                id="officialDate"
+                name="officialDate"
+                value={formData.officialDate}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="contractType">Loại HĐLĐ *</label>
+              <select
+                className="form-input"
+                id="contractType"
+                name="contractType"
+                value={formData.contractType}
+                onChange={onChange}
+                required
+              >
+                <option value="">Chọn Loại HĐLĐ</option>
+                <option value="Thử việc">Thử việc</option>
+                <option value="Có thời hạn">Có thời hạn</option>
+                <option value="Không thời hạn">Không thời hạn</option>
+                <option value="Theo mùa vụ">Theo mùa vụ</option>
+                <option value="Theo công việc">Theo công việc</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="salary">Mức Lương *</label>
               <input
                 type="number"
                 className="form-input"
@@ -344,103 +637,202 @@ const EmployeeForm = () => {
             </div>
           </div>
 
+          {/* Phụ cấp */}
+          <h4 style={{ color: '#666', marginBottom: '1rem', marginTop: '1.5rem' }}>
+            💰 Phụ Cấp
+          </h4>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="hireDate">Ngày Vào Làm</label>
+              <label className="form-label" htmlFor="allowances.meal">Cơm Ca</label>
               <input
-                type="date"
+                type="number"
                 className="form-input"
-                id="hireDate"
-                name="hireDate"
-                value={formData.hireDate}
-                onChange={onChange}
-                required
+                id="allowances.meal"
+                name="allowances.meal"
+                value={formData.allowances.meal}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  allowances: { ...formData.allowances, meal: e.target.value }
+                })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="allowances.transport">Xăng</label>
+              <input
+                type="number"
+                className="form-input"
+                id="allowances.transport"
+                name="allowances.transport"
+                value={formData.allowances.transport}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  allowances: { ...formData.allowances, transport: e.target.value }
+                })}
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="address">Địa Chỉ</label>
-            <textarea
-              className="form-input"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={onChange}
-              rows="3"
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="allowances.additional">Kiêm Nhiệm</label>
+              <input
+                type="number"
+                className="form-input"
+                id="allowances.additional"
+                name="allowances.additional"
+                value={formData.allowances.additional}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  allowances: { ...formData.allowances, additional: e.target.value }
+                })}
+              />
           </div>
 
-          {/* File Upload Section - Only show for edit mode */}
+          <div className="form-group">
+              <label className="form-label" htmlFor="allowances.hazardous">Độc Hại</label>
+              <input
+                type="number"
+              className="form-input"
+                id="allowances.hazardous"
+                name="allowances.hazardous"
+                value={formData.allowances.hazardous}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  allowances: { ...formData.allowances, hazardous: e.target.value }
+                })}
+              />
+            </div>
+          </div>
+
+          {/* Hồ sơ */}
+          <h3 style={{ color: '#1976d2', marginBottom: '1rem', borderBottom: '2px solid #1976d2', paddingBottom: '0.5rem', marginTop: '2rem' }}>
+            📁 Hồ Sơ
+          </h3>
+
           {isEdit && (
-            <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px' }}>
-              <h3 style={{ marginBottom: '1rem' }}>Tài Liệu Nhân Viên</h3>
+            <div>
+              <h4 style={{ color: '#666', marginBottom: '1rem' }}>📤 Tải Lên Hồ Sơ</h4>
               
-              {/* File Upload */}
+              {/* Sơ Yếu Lý Lịch */}
               <div className="form-group" style={{ marginBottom: '1rem' }}>
-                <label className="form-label" htmlFor="fileUpload">Tải File Lên</label>
+                <label className="form-label">📄 Sơ Yếu Lý Lịch</label>
                 <input
                   type="file"
                   className="form-input"
-                  id="fileUpload"
-                  onChange={handleFileUpload}
+                  id="resumeUpload"
+                  onChange={(e) => handleFileUpload(e, 'resume')}
+                  disabled={uploading}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+              </div>
+
+              {/* Giấy Khám Sức Khỏe */}
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">🏥 Giấy Khám Sức Khỏe</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  id="healthUpload"
+                  onChange={(e) => handleFileUpload(e, 'health')}
+                  disabled={uploading}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+              </div>
+
+              {/* Bằng Cấp */}
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">🎓 Bằng Cấp</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  id="diplomaUpload"
+                  onChange={(e) => handleFileUpload(e, 'diploma')}
+                  disabled={uploading}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+              </div>
+
+              {/* Chứng Chỉ Hành Nghề */}
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">📜 Chứng Chỉ Hành Nghề</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  id="certificateUpload"
+                  onChange={(e) => handleFileUpload(e, 'certificate')}
+                  disabled={uploading}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+              </div>
+
+              {/* Tài Liệu Khác */}
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">📁 Tài Liệu Khác</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  id="otherUpload"
+                  onChange={(e) => handleFileUpload(e, 'other')}
                   disabled={uploading}
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
                 />
-                {uploading && <p style={{ color: '#666', fontSize: '0.9rem' }}>Đang tải lên...</p>}
               </div>
 
-              {/* Files List */}
-              {files.length > 0 && (
-                <div>
-                  <h4 style={{ marginBottom: '0.5rem' }}>Tài Liệu Đã Tải Lên</h4>
-                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {files.map((file) => (
-                      <div key={file._id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        padding: '0.5rem',
-                        border: '1px solid #eee',
-                        borderRadius: '4px',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <div>
-                          <strong>{file.originalName}</strong>
-                          <br />
-                          <small style={{ color: '#666' }}>
-                            {(file.fileSize / 1024).toFixed(1)} KB • {file.category} • 
-                            {new Date(file.createdAt).toLocaleDateString()}
-                          </small>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleFileDownload(file._id)}
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
-                          >
-                            Tải Xuống
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleFileDelete(file._id)}
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {uploading && <p style={{ color: '#666', fontSize: '0.9rem' }}>Đang tải lên...</p>}
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          {/* Files List */}
+          {isEdit && files.length > 0 && (
+            <div>
+              <h4 style={{ marginBottom: '0.5rem' }}>Tài Liệu Đã Tải Lên</h4>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {files.map((file) => (
+                  <div key={file._id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '0.5rem',
+                    border: '1px solid #eee',
+                    borderRadius: '4px',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <div>
+                      <strong>{file.originalName}</strong>
+                      <br />
+                      <small style={{ color: '#666' }}>
+                        {(file.fileSize / 1024).toFixed(1)} KB • {getCategoryName(file.category)} • 
+                        {new Date(file.createdAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={() => handleFileDownload(file._id)}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                      >
+                        Tải Xuống
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleFileDelete(file._id)}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button
               type="submit"
               className="btn btn-primary"
