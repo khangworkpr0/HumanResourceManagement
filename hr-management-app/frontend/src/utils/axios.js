@@ -2,8 +2,11 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://192.168.0.164:5000',
-  timeout: 10000,
+  // Trên Vercel: dùng '/api' (relative path - cùng domain)
+  // Local dev: dùng REACT_APP_API_URL từ .env hoặc fallback
+  baseURL: process.env.REACT_APP_API_URL || 
+           (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api'),
+  timeout: 30000, // Tăng timeout cho serverless cold start
   headers: {
     'Content-Type': 'application/json',
   },
