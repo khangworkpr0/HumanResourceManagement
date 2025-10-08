@@ -1,0 +1,23 @@
+{
+  "name": "hr-management-api",
+  "version": "1.0.0",
+  "description": "HR Management System API for Vercel Serverless",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "multer": "^1.4.5-lts.1",
+    "puppeteer": "^21.6.0",
+    "validator": "^13.11.0",
+    "express-validator": "^7.2.1",
+    "handlebars": "^4.7.8"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
+

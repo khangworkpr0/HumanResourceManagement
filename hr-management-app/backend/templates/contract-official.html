@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hợp Đồng Lao Động</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 13px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+        .company-header {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .country-header {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .contract-number {
+            text-align: right;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .contract-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .section {
+            margin: 15px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .info-table td {
+            padding: 6px;
+            border: 1px solid #000;
+            vertical-align: top;
+        }
+        .info-table .label {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            text-align: center;
+        }
+        .date {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .terms {
+            margin: 15px 0;
+        }
+        .terms-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .terms-list {
+            margin: 8px 0;
+            padding-left: 15px;
+        }
+        .terms-list li {
+            margin: 3px 0;
+        }
+        .salary-details {
+            background-color: #e3f2fd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .article {
+            margin: 15px 0;
+        }
+        .article-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        /* Ẩn header và footer mặc định khi in */
+        @media print {
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="company-header">
+        CÔNG TY CỔ PHẦN BIC NANO CELL
+    </div>
+    <div class="country-header">
+        CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+        Độc lập – Tự do – Hạnh phúc
+    </div>
+    
+    <div class="contract-number">
+        Số: {{contractNumber}}/2025/HĐLĐ-BNC<br>
+        Cần Thơ, ngày {{currentDate}}
+    </div>
+    
+    <div class="contract-title">
+        HỢP ĐỒNG LAO ĐỘNG
+    </div>
+
+    <div class="content">
+        <p><strong>Căn cứ Bộ Luật Lao động số 45/2019/QH14 ngày 20/11/2019;</strong></p>
+        <p><strong>Theo đề nghị của Trưởng phòng Tổ chức – Hành chính,</strong></p>
+        <p><strong>Hôm nay, ngày {{currentDate}}, chúng tôi gồm:</strong></p>
+
+        <div class="section">
+            <p><strong>BÊN SỬ DỤNG LAO ĐỘNG (BÊN A): CÔNG TY CỔ PHẦN BIC NANO CELL</strong></p>
+            <p>Đại diện: Bà Nguyễn Thị Tốt</p>
+            <p>Chức vụ: Tổng Giám đốc.</p>
+            <p>Điện thoại: 0908.028.822.</p>
+            <p>Địa chỉ: Số 163D Đường Nguyễn Văn Cừ, P. Tân An, TP. Cần Thơ.</p>
+            
+            <p><strong>BÊN NGƯỜI LAO ĐỘNG (BÊN B): {{employeeName}}</strong></p>
+            <p>Quốc tịch: Việt Nam</p>
+            <p>Sinh ngày: {{birthDate}}</p>
+            <p>Nghề nghiệp: {{position}}</p>
+            <p>Địa chỉ thường trú: {{permanentAddress}}</p>
+            <p>Căn cước công dân: {{cccd}}; Cấp ngày: {{cccdIssueDate}}</p>
+            <p>Điện thoại liên hệ: {{phone}}</p>
+            
+            <p><strong>Sau khi bàn bạc, hai bên thống nhất thoả thuận ký kết hợp đồng lao động và cam kết làm đúng những điều khoản sau:</strong></p>
+        </div>
+
+        <div class="article">
+            <div class="article-title">Điều 1: Thời hạn và công việc hợp đồng</div>
+            <p>- Loại hợp đồng lao động: {{contractType}}.</p>
+            <p>- Từ ngày {{startDate}} đến ngày {{endDate}}</p>
+            <p>- Địa điểm làm việc: Số 163D Đường Nguyễn Văn Cừ, P. Tân An, TP. Cần Thơ hoặc các địa điểm khác theo sự phân công của Công ty</p>
+            <p>- Chức vụ: {{position}} hoặc bất kỳ vị trí nào được công ty toàn quyền quyết định tại từng thời điểm tùy thuộc vào nhu cầu công việc. Trong bất kỳ chức danh, chức vụ nào, người lao động phải tuân thủ theo các chỉ đạo của Công ty.</p>
+            <p>- Công việc phải làm: Thực hiện các công việc theo sự phân công của Ban Giám đốc. Phạm vi công việc của người lao động được quy định theo phạm vi hoạt động chuyên môn và theo các phụ lục hợp đồng lao động (nếu có).</p>
+        </div>
+
+        <div class="article">
+            <div class="article-title">Điều 2: Chế độ làm việc</div>
+            <p>- Thời giờ làm việc: 48 giờ/tuần, tuần làm việc 6 ngày</p>
+            <p>- Nghỉ hàng tuần, nghỉ hàng năm, nghỉ lễ: theo quy định.</p>
+            <p>- Do đặc thù hoạt động phòng khám, người lao động phải làm việc vào thứ 7, chủ nhật hàng tuần và sẽ được nghỉ bù vào ngày khác trong tuần</p>
+            <p>- Được cấp phát những dụng cụ làm việc cần thiết theo yêu cầu công việc.</p>
+        </div>
+
+        <div class="article">
+            <div class="article-title">Điều 3: Nghĩa vụ và quyền lợi của người lao động</div>
+            <p><strong>1. Quyền lợi</strong></p>
+            <p>- Phương tiện đi lại làm việc: Tự túc.</p>
+            <p>- Mức lương cơ bản: {{salary}}đ/tháng</p>
+            <p>- Phụ cấp: Theo quy định của Công ty</p>
+            <p>- Hình thức trả lương: Tiền mặt hoặc chuyển khoản.</p>
+            <p>- Được trả lương vào các ngày: Ngày 05 tháng liền kề.</p>
+            <p>- Tiền thưởng: Theo quy định của Công ty.</p>
+            <p>- Chế độ nâng lương: Theo quy định của Công ty.</p>
+            <p>- Chế độ nghỉ ngơi (nghỉ hàng tuần, phép năm, lễ tết...): Theo quy định chế độ làm việc của Công ty.</p>
+            <p>- Nếu do yêu cầu công việc, người lao động vẫn phải làm việc theo chỉ đạo để hoàn thành nhiệm vụ được giao và được sắp xếp nghỉ bù.</p>
+            <p>- Bảo hiểm xã hội, bảo hiểm y tế và bảo hiểm thất nghiệp: Theo quy định của Nhà nước.</p>
+            <p>- Chế độ đào tạo: Theo quy định của Công ty.</p>
+            
+            <p><strong>2. Nghĩa vụ</strong></p>
+            <p>- Hoàn thành những công việc đã cam kết trong hợp đồng lao động.</p>
+            <p>- Chấp hành nội quy, quy chế của Công ty, nội quy kỷ luật lao động, an toàn lao động của Công ty.</p>
+            <p>- Phải hoàn thành nghĩa vụ thuế đối với Nhà nước.</p>
+            <p>- Bồi thường vi phạm và vật chất: Người lao động làm hư hỏng dụng cụ, thiết bị hoặc có hành vi khác gây thiệt hại tài sản của người sử dụng lao động thì phải bồi thường theo nội quy, quy chế của công ty và quy định pháp luật.</p>
+        </div>
+
+        <div class="article">
+            <div class="article-title">Điều 4: Nghĩa vụ và quyền hạn của người sử dụng lao động</div>
+            <p><strong>1. Nghĩa vụ</strong></p>
+            <p>- Bảo đảm việc làm và thực hiện đầy đủ những điều đã cam kết trong hợp đồng lao động.</p>
+            <p>- Thanh toán đầy đủ, đúng thời hạn các chế độ và quyền lợi cho người lao động theo hợp đồng lao động, thỏa ước lao động tập thể (nếu có).</p>
+            
+            <p><strong>2. Quyền hạn</strong></p>
+            <p>- Điều hành người lao động hoàn thành công việc theo hợp đồng (bố trí, điều chuyển, tạm ngừng việc…).</p>
+            <p>- Tạm hoãn, chấm dứt hợp đồng lao động, kỷ luật người lao động theo quy định của pháp luật, thỏa ước lao động tập thể (nếu có) và nội quy lao động của Công ty.</p>
+        </div>
+
+        <div class="article">
+            <div class="article-title">Điều 5: Điều khoản thi hành</div>
+            <p>- Trong thời gian thực hiện hợp đồng lao động, nếu công ty kinh doanh không đạt mục tiêu đề ra hoặc vì một lý do khách quan nào khác thì người sử dụng lao động có quyền chấm dứt hợp đồng lao động đối với người lao động và không phải bồi thường bất kỳ một khoản nào khác cho người lao động.</p>
+            <p>- Hợp đồng lao động được làm thành 02 (hai) bản có giá trị ngang nhau, bên người lao động giữ 01 (một) bản, bên người sử dụng lao động giữ 01 (một) bản và có hiệu lực từ ngày ký kết. Khi hai bên ký kết phụ lục hợp đồng lao động thì nội dung của phụ lục hợp đồng lao động cũng có giá trị như các nội dung của bản hợp đồng lao động này.</p>
+            <p>- Hợp đồng này được làm tại Công ty Cổ phần BIC NANO CELL ngày {{currentDate}}./.</p>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <p><strong>NGƯỜI LAO ĐỘNG</strong></p>
+                <p><strong>(Ký tên)</strong></p>
+                <br><br><br><br>
+                <p><strong>{{employeeName}}</strong></p>
+            </div>
+            <div class="signature-box">
+                <p><strong>BÊN SỬ DỤNG LAO ĐỘNG</strong></p>
+                <p><strong>TỔNG GIÁM ĐỐC</strong></p>
+                <br><br><br><br>
+                <p><strong>Nguyễn Thị Tốt</strong></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

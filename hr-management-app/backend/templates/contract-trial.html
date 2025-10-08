@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hợp Đồng Thử Việc</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .section {
+            margin: 15px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .info-table td {
+            padding: 8px;
+            border: 1px solid #000;
+            vertical-align: top;
+        }
+        .info-table .label {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            text-align: center;
+        }
+        .date {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .terms {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #1976d2;
+        }
+        .terms-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .terms-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .terms-list li {
+            margin: 5px 0;
+        }
+        
+        /* Ẩn header và footer mặc định khi in */
+        @media print {
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        HỢP ĐỒNG THỬ VIỆC
+    </div>
+
+    <div class="content">
+        <p><strong>Căn cứ:</strong> Bộ luật Lao động Việt Nam năm 2019</p>
+        <p><strong>Căn cứ:</strong> Nhu cầu tuyển dụng của Công ty</p>
+        <p><strong>Căn cứ:</strong> Khả năng và nguyện vọng của người lao động</p>
+        
+        <p>Hai bên thống nhất ký kết hợp đồng thử việc với các điều khoản sau:</p>
+
+        <div class="section">
+            <div class="section-title">ĐIỀU 1: THÔNG TIN CÁC BÊN</div>
+            
+            <table class="info-table">
+                <tr>
+                    <td class="label">Bên A (Công ty):</td>
+                    <td><strong>CÔNG TY TNHH ABC</strong><br>
+                        Địa chỉ: 123 Đường ABC, Quận XYZ, TP.HCM<br>
+                        Mã số thuế: 0123456789<br>
+                        Đại diện: Ông/Bà Nguyễn Văn A - Giám đốc
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Bên B (Người lao động):</td>
+                    <td><strong>{{employeeName}}</strong><br>
+                        CCCD: {{cccd}}<br>
+                        Ngày cấp: {{cccdIssueDate}}<br>
+                        Nơi cấp: {{cccdIssuePlace}}<br>
+                        Địa chỉ thường trú: {{permanentAddress}}<br>
+                        Số điện thoại: {{phone}}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">ĐIỀU 2: CÔNG VIỆC VÀ ĐIỀU KIỆN LÀM VIỆC</div>
+            
+            <table class="info-table">
+                <tr>
+                    <td class="label">Chức vụ:</td>
+                    <td><strong>{{position}}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Bộ phận:</td>
+                    <td><strong>{{department}}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Trình độ:</td>
+                    <td>{{educationLevel}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Chuyên ngành:</td>
+                    <td>{{major}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Trường đào tạo:</td>
+                    <td>{{school}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Thời gian thử việc:</td>
+                    <td><strong>2 tháng</strong> (từ {{startDate}} đến {{officialDate}})</td>
+                </tr>
+                <tr>
+                    <td class="label">Mức lương thử việc:</td>
+                    <td><strong>{{salary}} VNĐ/tháng</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">ĐIỀU 3: QUYỀN VÀ NGHĨA VỤ</div>
+            
+            <div class="terms">
+                <div class="terms-title">3.1. Quyền của người lao động:</div>
+                <ul class="terms-list">
+                    <li>Được trả lương đúng thời hạn theo thỏa thuận</li>
+                    <li>Được bảo đảm an toàn, vệ sinh lao động</li>
+                    <li>Được đào tạo, bồi dưỡng nâng cao trình độ</li>
+                    <li>Được nghỉ phép theo quy định của pháp luật</li>
+                </ul>
+            </div>
+
+            <div class="terms">
+                <div class="terms-title">3.2. Nghĩa vụ của người lao động:</div>
+                <ul class="terms-list">
+                    <li>Thực hiện công việc theo đúng chức năng, nhiệm vụ được giao</li>
+                    <li>Tuân thủ nội quy, quy chế của Công ty</li>
+                    <li>Bảo vệ tài sản, bí mật kinh doanh của Công ty</li>
+                    <li>Tham gia đầy đủ các hoạt động của Công ty</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">ĐIỀU 4: ĐIỀU KHOẢN CHUNG</div>
+            
+            <p><strong>4.1.</strong> Hợp đồng này có hiệu lực từ ngày {{startDate}} và kết thúc vào ngày {{officialDate}}.</p>
+            <p><strong>4.2.</strong> Sau thời gian thử việc, nếu đạt yêu cầu, hai bên sẽ ký kết hợp đồng lao động chính thức.</p>
+            <p><strong>4.3.</strong> Trong thời gian thử việc, mỗi bên có quyền chấm dứt hợp đồng mà không cần báo trước.</p>
+            <p><strong>4.4.</strong> Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản.</p>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <p><strong>BÊN A (CÔNG TY)</strong></p>
+                <br><br><br>
+                <p><strong>Nguyễn Văn A</strong></p>
+                <p><em>Giám đốc</em></p>
+            </div>
+            <div class="signature-box">
+                <p><strong>BÊN B (NGƯỜI LAO ĐỘNG)</strong></p>
+                <br><br><br>
+                <p><strong>{{employeeName}}</strong></p>
+            </div>
+        </div>
+
+        <div class="date">
+            <p><strong>TP.HCM, ngày {{currentDate}}</strong></p>
+        </div>
+    </div>
+</body>
+</html>
