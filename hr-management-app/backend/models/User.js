@@ -104,6 +104,18 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ['Thử việc', 'Có thời hạn', 'Không thời hạn', 'Theo mùa vụ', 'Theo công việc']
   },
+  contractStartDate: {
+    type: Date,
+    default: null
+  },
+  contractEndDate: {
+    type: Date,
+    default: null
+  },
+  contractDuration: {
+    type: Number,
+    default: null
+  },
   salary: {
     type: Number,
     required: true

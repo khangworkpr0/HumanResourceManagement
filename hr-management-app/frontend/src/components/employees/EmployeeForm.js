@@ -33,6 +33,9 @@ const EmployeeForm = () => {
     startDate: '',
     officialDate: '',
     contractType: '',
+    contractStartDate: '',
+    contractEndDate: '',
+    contractDuration: '',
     salary: '',
     allowances: {
       meal: '',
@@ -57,9 +60,13 @@ const EmployeeForm = () => {
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [contractTemplates, setContractTemplates] = useState([]);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [selectedContractType, setSelectedContractType] = useState('');
 
   useEffect(() => {
     fetchDepartments();
+    fetchContractTemplates();
     if (isEdit) {
       fetchEmployee();
       fetchFiles();
@@ -105,6 +112,9 @@ const EmployeeForm = () => {
         startDate: employee.startDate ? employee.startDate.split('T')[0] : '',
         officialDate: employee.officialDate ? employee.officialDate.split('T')[0] : '',
         contractType: employee.contractType || '',
+        contractStartDate: employee.contractStartDate ? employee.contractStartDate.split('T')[0] : '',
+        contractEndDate: employee.contractEndDate ? employee.contractEndDate.split('T')[0] : '',
+        contractDuration: employee.contractDuration || '',
         salary: employee.salary || '',
         allowances: employee.allowances || {
           meal: '',
@@ -143,7 +153,22 @@ const EmployeeForm = () => {
   };
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    if (name === 'contractDuration' && formData.contractStartDate) {
+      // Tự động tính ngày kết thúc khi chọn số năm
+      const startDate = new Date(formData.contractStartDate);
+      const endDate = new Date(startDate);
+      endDate.setFullYear(startDate.getFullYear() + parseInt(value));
+      
+      setFormData({ 
+        ...formData, 
+        [name]: value,
+        contractEndDate: endDate.toISOString().split('T')[0]
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleProfileImageChange = (e) => {
@@ -167,6 +192,14 @@ const EmployeeForm = () => {
       if (isEdit && !submitData.password) {
         delete submitData.password;
       }
+
+      // Debug: Log contract fields
+      console.log('Contract fields being sent:', {
+        contractStartDate: submitData.contractStartDate,
+        contractEndDate: submitData.contractEndDate,
+        contractDuration: submitData.contractDuration,
+        contractType: submitData.contractType
+      });
 
       if (isEdit) {
         // Update employee first
@@ -236,6 +269,72 @@ const EmployeeForm = () => {
       'other': 'Tài Liệu Khác'
     };
     return categoryNames[category] || 'Tài Liệu';
+  };
+
+  const fetchContractTemplates = async () => {
+    try {
+      const response = await api.get('/api/contracts/templates');
+      setContractTemplates(response.data.data);
+    } catch (error) {
+      console.error('Error fetching contract templates:', error);
+    }
+  };
+
+  const handleGenerateContract = async () => {
+    if (!selectedContractType) {
+      alert('Vui lòng chọn loại hợp đồng');
+      return;
+    }
+
+    try {
+      // Try PDF generation first
+      try {
+        const response = await api.post('/api/contracts/generate', {
+          employeeId: id,
+          contractType: selectedContractType
+        }, {
+          responseType: 'blob'
+        });
+
+        // Create blob and download
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `hop-dong-${selectedContractType}-${formData.name}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        setShowContractModal(false);
+        alert('Tạo hợp đồng PDF thành công!');
+      } catch (pdfError) {
+        console.log('PDF generation failed, trying simple HTML...', pdfError);
+        
+        // Fallback to simple HTML generation
+        const simpleResponse = await api.post('/api/contracts/generate-simple', {
+          employeeId: id,
+          contractType: selectedContractType
+        });
+
+        // Open HTML in new window for printing
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write(simpleResponse.data.data.html);
+        newWindow.document.close();
+        
+        // Auto print
+        setTimeout(() => {
+          newWindow.print();
+        }, 1000);
+
+        setShowContractModal(false);
+        alert('Tạo hợp đồng HTML thành công! Cửa sổ in sẽ mở tự động.');
+      }
+    } catch (error) {
+      alert('Không thể tạo hợp đồng: ' + error.message);
+      console.error('Error generating contract:', error);
+    }
   };
 
   const handleFileDownload = async (fileId) => {
@@ -637,6 +736,59 @@ const EmployeeForm = () => {
             </div>
           </div>
 
+          {/* Thông tin hợp đồng */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="contractStartDate">Ngày Bắt Đầu Hợp Đồng</label>
+              <input
+                type="date"
+                className="form-input"
+                id="contractStartDate"
+                name="contractStartDate"
+                value={formData.contractStartDate}
+                onChange={onChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="contractEndDate">Ngày Kết Thúc Hợp Đồng</label>
+              <input
+                type="date"
+                className="form-input"
+                id="contractEndDate"
+                name="contractEndDate"
+                value={formData.contractEndDate}
+                onChange={onChange}
+                disabled={formData.contractType === 'Không thời hạn' || formData.contractType === 'Thử việc'}
+              />
+            </div>
+          </div>
+
+          {/* Số năm hợp đồng (chỉ hiện khi chọn "Có thời hạn") */}
+          {formData.contractType === 'Có thời hạn' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginTop: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="contractDuration">Số Năm Hợp Đồng *</label>
+                <select
+                  className="form-input"
+                  id="contractDuration"
+                  name="contractDuration"
+                  value={formData.contractDuration}
+                  onChange={onChange}
+                  required
+                >
+                  <option value="">Chọn Số Năm</option>
+                  <option value="1">1 năm</option>
+                  <option value="2">2 năm</option>
+                  <option value="3">3 năm</option>
+                  <option value="4">4 năm</option>
+                  <option value="5">5 năm</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+
           {/* Phụ cấp */}
           <h4 style={{ color: '#666', marginBottom: '1rem', marginTop: '1.5rem' }}>
             💰 Phụ Cấp
@@ -840,6 +992,16 @@ const EmployeeForm = () => {
             >
               {loading ? 'Đang lưu...' : (isEdit ? 'Cập Nhật Nhân Viên' : 'Thêm Nhân Viên')}
             </button>
+            {isEdit && (
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={() => setShowContractModal(true)}
+                disabled={loading}
+              >
+                📄 Tạo Hợp Đồng
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary"
@@ -849,6 +1011,76 @@ const EmployeeForm = () => {
             </button>
           </div>
         </form>
+
+        {/* Contract Generation Modal */}
+        {showContractModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: '8px',
+              width: '500px',
+              maxWidth: '90vw'
+            }}>
+              <h3 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                Chọn Loại Hợp Đồng
+              </h3>
+              
+              <div style={{ marginBottom: '1.5rem' }}>
+                {contractTemplates.map((template) => (
+                  <div key={template.id} style={{
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '1rem',
+                    marginBottom: '0.5rem',
+                    cursor: 'pointer',
+                    backgroundColor: selectedContractType === template.id ? '#e3f2fd' : 'white'
+                  }} onClick={() => setSelectedContractType(template.id)}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                      {template.name}
+                    </div>
+                    <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                      {template.description}
+                    </div>
+                    <div style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                      Thời gian: {template.duration}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowContractModal(false);
+                    setSelectedContractType('');
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleGenerateContract}
+                  disabled={!selectedContractType}
+                >
+                  Tạo PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

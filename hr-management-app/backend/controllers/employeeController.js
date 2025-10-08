@@ -128,6 +128,9 @@ const createEmployee = async (req, res) => {
       startDate,
       officialDate,
       contractType,
+      contractStartDate,
+      contractEndDate,
+      contractDuration,
       salary,
       allowances,
       documents,
@@ -164,6 +167,9 @@ const createEmployee = async (req, res) => {
       startDate,
       officialDate,
       contractType,
+      contractStartDate,
+      contractEndDate,
+      contractDuration,
       salary,
       allowances: allowances || {
         meal: 0,
@@ -220,11 +226,22 @@ const updateEmployee = async (req, res) => {
       startDate,
       officialDate,
       contractType,
+      contractStartDate,
+      contractEndDate,
+      contractDuration,
       salary,
       allowances,
       documents,
       role
     } = req.body;
+
+    // Debug: Log contract fields received
+    console.log('Contract fields received:', {
+      contractStartDate,
+      contractEndDate,
+      contractDuration,
+      contractType
+    });
 
     const employee = await User.findByIdAndUpdate(
       req.params.id,
@@ -248,6 +265,9 @@ const updateEmployee = async (req, res) => {
         startDate: startDate || undefined,
         officialDate: officialDate || undefined,
         contractType: contractType || undefined,
+        contractStartDate: contractStartDate !== '' ? contractStartDate : null,
+        contractEndDate: contractEndDate !== '' ? contractEndDate : null,
+        contractDuration: contractDuration !== '' ? contractDuration : null,
         salary: salary || undefined,
         allowances: allowances || undefined,
         documents: documents || undefined,
