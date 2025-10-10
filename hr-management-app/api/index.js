@@ -82,7 +82,7 @@ app.use(async (req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'HR Management System API is running on Vercel',
@@ -92,12 +92,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/employees', employeeFileRoutes); // File routes
-app.use('/api/departments', departmentRoutes);
-app.use('/api/contracts', contractRoutes);
+// API Routes (without /api prefix - Vercel handles that)
+app.use('/auth', authRoutes);
+app.use('/employees', employeeRoutes);
+app.use('/employees', employeeFileRoutes); // File routes
+app.use('/departments', departmentRoutes);
+app.use('/contracts', contractRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -134,7 +134,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler cho API routes
-app.use('/api/*', (req, res) => {
+app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'API route not found',
