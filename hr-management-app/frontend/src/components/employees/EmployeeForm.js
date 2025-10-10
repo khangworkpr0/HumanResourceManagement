@@ -75,7 +75,7 @@ const EmployeeForm = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await api.get('departments');
+      const response = await api.get('/api/departments');
       setDepartments(response.data.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -84,7 +84,7 @@ const EmployeeForm = () => {
 
   const fetchEmployee = async () => {
     try {
-      const response = await api.get(`/employees/${id}`);
+      const response = await api.get(`/api/employees/${id}`);
       const employee = response.data.data;
       setFormData({
         // Thông tin cơ bản
@@ -145,7 +145,7 @@ const EmployeeForm = () => {
 
   const fetchFiles = async () => {
     try {
-      const response = await api.get(`/employees/${id}/files`);
+      const response = await api.get(`/api/employees/${id}/files`);
       setFiles(response.data.data);
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -203,25 +203,25 @@ const EmployeeForm = () => {
 
       if (isEdit) {
         // Update employee first
-        await api.put(`/employees/${id}`, submitData);
+        await api.put(`/api/employees/${id}`, submitData);
         
         // Then upload profile image if provided
         if (profileImage) {
           const imageFormData = new FormData();
           imageFormData.append('profileImage', profileImage);
-          await api.put(`/employees/${id}/profile-image`, imageFormData, {
+          await api.put(`/api/employees/${id}/profile-image`, imageFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
         }
       } else {
         // Create employee first
-        const response = await api.post('employees', submitData);
+        const response = await api.post('/api/employees', submitData);
         
         // Then upload profile image if provided
         if (profileImage && response.data.data._id) {
           const imageFormData = new FormData();
           imageFormData.append('profileImage', profileImage);
-          await api.put(`/employees/${response.data.data._id}/profile-image`, imageFormData, {
+          await api.put(`/api/employees/${response.data.data._id}/profile-image`, imageFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
         }
@@ -246,7 +246,7 @@ const EmployeeForm = () => {
       formData.append('file', file);
       formData.append('category', category);
 
-      await api.post(`/employees/${id}/files`, formData, {
+      await api.post(`/api/employees/${id}/files`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -273,7 +273,7 @@ const EmployeeForm = () => {
 
   const fetchContractTemplates = async () => {
     try {
-      const response = await api.get('contracts/templates');
+      const response = await api.get('/api/contracts/templates');
       setContractTemplates(response.data.data);
     } catch (error) {
       console.error('Error fetching contract templates:', error);
@@ -289,7 +289,7 @@ const EmployeeForm = () => {
     try {
       // Try PDF generation first
       try {
-        const response = await api.post('contracts/generate', {
+        const response = await api.post('/api/contracts/generate', {
           employeeId: id,
           contractType: selectedContractType
         }, {
@@ -313,7 +313,7 @@ const EmployeeForm = () => {
         console.log('PDF generation failed, trying simple HTML...', pdfError);
         
         // Fallback to simple HTML generation
-        const simpleResponse = await api.post('contracts/generate-simple', {
+        const simpleResponse = await api.post('/api/contracts/generate-simple', {
           employeeId: id,
           contractType: selectedContractType
         });
@@ -339,7 +339,7 @@ const EmployeeForm = () => {
 
   const handleFileDownload = async (fileId) => {
     try {
-      const response = await api.get(`/employees/files/${fileId}/download`, {
+      const response = await api.get(`/api/employees/files/${fileId}/download`, {
         responseType: 'blob'
       });
       
@@ -358,7 +358,7 @@ const EmployeeForm = () => {
   const handleFileDelete = async (fileId) => {
     if (window.confirm('Are you sure you want to delete this file?')) {
       try {
-        await api.delete(`/employees/files/${fileId}`);
+        await api.delete(`/api/employees/files/${fileId}`);
         fetchFiles();
         alert('File deleted successfully');
       } catch (error) {

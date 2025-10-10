@@ -37,7 +37,7 @@ const EmployeeList = () => {
       params.append('page', pagination.currentPage);
       params.append('limit', '10');
       
-      const response = await api.get(`/employees?${params.toString()}`);
+      const response = await api.get(`/api/employees?${params.toString()}`);
       setEmployees(response.data.data);
       setPagination({
         currentPage: response.data.currentPage,
@@ -56,7 +56,7 @@ const EmployeeList = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await api.get('/departments');
+      const response = await api.get('/api/departments');
       setDepartments(response.data.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -66,7 +66,7 @@ const EmployeeList = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this employee?')) {
       try {
-        await api.delete(`/employees/${id}`);
+        await api.delete(`/api/employees/${id}`);
         setEmployees(employees.filter(emp => emp._id !== id));
       } catch (error) {
         alert('Failed to delete employee');
