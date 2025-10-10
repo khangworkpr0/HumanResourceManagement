@@ -20,8 +20,8 @@ const Dashboard = () => {
   const fetchStats = async () => {
     try {
       const [employeesRes, departmentsRes] = await Promise.all([
-        api.get('/api/employees'),
-        api.get('/api/departments')
+        api.get('/employees'),
+        api.get('/departments')
       ]);
 
       const activeEmployees = employeesRes.data.data.filter(emp => emp.isActive).length;
