@@ -20,7 +20,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get('/api/auth/profile');
+      const response = await axios.get('/auth/profile');
       const userProfile = response.data.data.user;
       setProfile(userProfile);
       setFormData({
@@ -43,7 +43,7 @@ const Profile = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('/api/auth/profile', formData);
+      await axios.put('/auth/profile', formData);
       setProfile({ ...profile, ...formData });
       setEditing(false);
       alert('Profile updated successfully');

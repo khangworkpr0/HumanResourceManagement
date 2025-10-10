@@ -13,7 +13,7 @@ const DepartmentList = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await api.get('/api/departments');
+      const response = await api.get('/departments');
       setDepartments(response.data.data);
     } catch (error) {
       setError('Failed to fetch departments');
@@ -26,7 +26,7 @@ const DepartmentList = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phòng ban này?')) {
       try {
-        await api.delete(`/api/departments/${id}`);
+        await api.delete(`/departments/${id}`);
         setDepartments(departments.filter(dept => dept._id !== id));
       } catch (error) {
         alert('Không thể xóa phòng ban');

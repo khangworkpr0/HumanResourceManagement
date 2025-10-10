@@ -75,7 +75,7 @@ const EmployeeForm = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await api.get('/api/departments');
+      const response = await api.get('/departments');
       setDepartments(response.data.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -215,7 +215,7 @@ const EmployeeForm = () => {
         }
       } else {
         // Create employee first
-        const response = await api.post('/api/employees', submitData);
+        const response = await api.post('/employees', submitData);
         
         // Then upload profile image if provided
         if (profileImage && response.data.data._id) {
@@ -273,7 +273,7 @@ const EmployeeForm = () => {
 
   const fetchContractTemplates = async () => {
     try {
-      const response = await api.get('/api/contracts/templates');
+      const response = await api.get('/contracts/templates');
       setContractTemplates(response.data.data);
     } catch (error) {
       console.error('Error fetching contract templates:', error);
@@ -289,7 +289,7 @@ const EmployeeForm = () => {
     try {
       // Try PDF generation first
       try {
-        const response = await api.post('/api/contracts/generate', {
+        const response = await api.post('/contracts/generate', {
           employeeId: id,
           contractType: selectedContractType
         }, {
@@ -313,7 +313,7 @@ const EmployeeForm = () => {
         console.log('PDF generation failed, trying simple HTML...', pdfError);
         
         // Fallback to simple HTML generation
-        const simpleResponse = await api.post('/api/contracts/generate-simple', {
+        const simpleResponse = await api.post('/contracts/generate-simple', {
           employeeId: id,
           contractType: selectedContractType
         });

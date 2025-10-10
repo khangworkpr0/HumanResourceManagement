@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await api.get('/api/auth/profile');
+      const res = await api.get('/auth/profile');
       dispatch({
         type: 'USER_LOADED',
         payload: res.data.data.user
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   // Register user - memoized
   const register = useCallback(async (formData) => {
     try {
-      const res = await api.post('/api/auth/register', formData);
+      const res = await api.post('/auth/register', formData);
       dispatch({
         type: 'REGISTER_SUCCESS',
         payload: res.data.data
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
   // Login user - memoized
   const login = useCallback(async (formData) => {
     try {
-      const res = await api.post('/api/auth/login', formData);
+      const res = await api.post('/auth/login', formData);
       const token = res.data.data.token;
       
       // Set token in axios headers immediately
@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }) => {
       
       // Load user profile
       try {
-        const profileRes = await api.get('/api/auth/profile');
+        const profileRes = await api.get('/auth/profile');
         dispatch({
           type: 'USER_LOADED',
           payload: profileRes.data.data.user
