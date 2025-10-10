@@ -28,7 +28,7 @@ const DepartmentForm = () => {
 
   const fetchManagers = async () => {
     try {
-      const response = await api.get('/api/employees');
+      const response = await api.get('/employees');
       setManagers(response.data.data.filter(emp => emp.role === 'hr' || emp.role === 'admin'));
     } catch (error) {
       console.error('Error fetching managers:', error);
@@ -37,7 +37,7 @@ const DepartmentForm = () => {
 
   const fetchDepartment = async () => {
     try {
-      const response = await api.get(`/api/departments/${id}`);
+      const response = await api.get(`/departments/${id}`);
       const department = response.data.data;
       setFormData({
         name: department.name,
@@ -63,9 +63,9 @@ const DepartmentForm = () => {
 
     try {
       if (isEdit) {
-        await api.put(`/api/departments/${id}`, formData);
+        await api.put(`/departments/${id}`, formData);
       } else {
-        await api.post('/api/departments', formData);
+        await api.post('/departments', formData);
       }
 
       navigate('/departments');
