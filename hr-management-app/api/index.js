@@ -33,13 +33,19 @@ async function connectToDatabase() {
 
     console.log('=> Connecting to MongoDB...');
     
-    // Quick connection settings
+    // Optimized settings for serverless with longer timeouts
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 8000,
-      socketTimeoutMS: 20000,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
       maxPoolSize: 5,
-      minPoolSize: 1
+      minPoolSize: 1,
+      maxIdleTimeMS: 60000,
+      bufferCommands: false  // Disable buffering for faster timeout errors
     });
+    
+    // Set query timeout globally
+    mongoose.set('bufferTimeoutMS', 20000);
 
     cachedDb = mongoose.connection;
     console.log('✅ MongoDB Connected');
