@@ -1,10 +1,11 @@
 /**
- * Vercel Serverless Function - API Entry Point (Simplified for debugging)
+ * Vercel Serverless Function - API Entry Point
  */
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -49,28 +50,32 @@ async function connectToDatabase() {
   }
 }
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
+// Middleware to connect DB before routes
+app.use(async (req, res, next) => {
   try {
-    // Try to connect to database
     await connectToDatabase();
-    
-    res.status(200).json({
-      success: true,
-      message: 'HR Management System API is running on Vercel',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      mongodbUriExists: !!process.env.MONGODB_URI,
-      jwtSecretExists: !!process.env.JWT_SECRET
-    });
+    next();
   } catch (error) {
+    console.error('Database connection failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Health check failed',
+      message: 'Database connection failed',
       error: error.message
     });
   }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'HR Management System API is running on Vercel',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    mongodbUriExists: !!process.env.MONGODB_URI,
+    jwtSecretExists: !!process.env.JWT_SECRET
+  });
 });
 
 // Root endpoint
@@ -78,73 +83,39 @@ app.get('/api', (req, res) => {
   res.json({
     success: true,
     message: 'HR Management API',
-    version: '1.0.0 (Simplified)',
+    version: '1.0.0',
     endpoints: {
-      health: '/api/health'
+      health: '/api/health',
+      auth: '/api/auth',
+      employees: '/api/employees',
+      departments: '/api/departments',
+      contracts: '/api/contracts'
     }
   });
 });
 
-// Lazy load routes only when needed
-app.use('/api/auth', async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    const authRoutes = require('../backend/routes/auth');
-    authRoutes(req, res, next);
-  } catch (error) {
-    console.error('Error loading auth routes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load auth module',
-      error: error.message
-    });
-  }
-});
-
-app.use('/api/employees', async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    const employeeRoutes = require('../backend/routes/employees');
-    employeeRoutes(req, res, next);
-  } catch (error) {
-    console.error('Error loading employee routes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load employees module',
-      error: error.message
-    });
-  }
-});
-
-app.use('/api/departments', async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    const departmentRoutes = require('../backend/routes/departments');
-    departmentRoutes(req, res, next);
-  } catch (error) {
-    console.error('Error loading department routes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load departments module',
-      error: error.message
-    });
-  }
-});
-
-app.use('/api/contracts', async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    const contractRoutes = require('../backend/routes/contracts');
-    contractRoutes(req, res, next);
-  } catch (error) {
-    console.error('Error loading contract routes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load contracts module',
-      error: error.message
-    });
-  }
-});
+// Import and use routes directly
+try {
+  const authRoutes = require('../backend/routes/auth');
+  app.use('/api/auth', authRoutes);
+  
+  const employeeRoutes = require('../backend/routes/employees');
+  app.use('/api/employees', employeeRoutes);
+  
+  const employeeFileRoutes = require('../backend/routes/employeeFiles');
+  app.use('/api/employees', employeeFileRoutes);
+  
+  const departmentRoutes = require('../backend/routes/departments');
+  app.use('/api/departments', departmentRoutes);
+  
+  const contractRoutes = require('../backend/routes/contracts');
+  app.use('/api/contracts', contractRoutes);
+  
+  console.log('✅ All routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading routes:', error.message);
+  // Routes will not be available but health check will work
+}
 
 // Error handling
 app.use((err, req, res, next) => {
