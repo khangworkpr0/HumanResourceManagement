@@ -1,39 +1,22 @@
 /**
- * Vercel Serverless Function - API Entry Point
- * 
- * File này là wrapper cho Express backend của bạn.
- * Vercel sẽ chạy file này như một serverless function.
+ * Vercel Serverless Function - API Entry Point (Simplified for debugging)
  */
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
-
-// Import routes từ backend
-const authRoutes = require('../backend/routes/auth');
-const employeeRoutes = require('../backend/routes/employees');
-const departmentRoutes = require('../backend/routes/departments');
-const contractRoutes = require('../backend/routes/contracts');
-const employeeFileRoutes = require('../backend/routes/employeeFiles');
 
 const app = express();
 
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Static file serving cho uploads
-app.use('/uploads', express.static(path.join(__dirname, '../backend/uploads')));
-
-// MongoDB connection với connection pooling cho serverless
+// MongoDB connection
 let cachedDb = null;
 
 async function connectToDatabase() {
@@ -45,14 +28,14 @@ async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error('MONGODB_URI environment variable is not defined');
+      console.warn('MONGODB_URI not defined');
+      return null;
     }
 
     console.log('=> Creating new database connection');
     await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      // Tối ưu cho serverless
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
@@ -61,97 +44,126 @@ async function connectToDatabase() {
     console.log(`MongoDB Connected: ${cachedDb.host}`);
     return cachedDb;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
+    console.error('MongoDB connection error:', error.message);
+    return null;
   }
 }
 
-// Middleware để kết nối database trước mỗi request
-app.use(async (req, res, next) => {
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
   try {
+    // Try to connect to database
     await connectToDatabase();
-    next();
+    
+    res.status(200).json({
+      success: true,
+      message: 'HR Management System API is running on Vercel',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      mongodbUriExists: !!process.env.MONGODB_URI,
+      jwtSecretExists: !!process.env.JWT_SECRET
+    });
   } catch (error) {
-    console.error('Database connection failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Database connection failed',
+      message: 'Health check failed',
       error: error.message
     });
   }
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
+// Root endpoint
+app.get('/api', (req, res) => {
+  res.json({
     success: true,
-    message: 'HR Management System API is running on Vercel',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    message: 'HR Management API',
+    version: '1.0.0 (Simplified)',
+    endpoints: {
+      health: '/api/health'
+    }
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/employees', employeeFileRoutes); // File routes
-app.use('/api/departments', departmentRoutes);
-app.use('/api/contracts', contractRoutes);
+// Lazy load routes only when needed
+app.use('/api/auth', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    const authRoutes = require('../backend/routes/auth');
+    authRoutes(req, res, next);
+  } catch (error) {
+    console.error('Error loading auth routes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load auth module',
+      error: error.message
+    });
+  }
+});
 
-// Error handling middleware
+app.use('/api/employees', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    const employeeRoutes = require('../backend/routes/employees');
+    employeeRoutes(req, res, next);
+  } catch (error) {
+    console.error('Error loading employee routes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load employees module',
+      error: error.message
+    });
+  }
+});
+
+app.use('/api/departments', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    const departmentRoutes = require('../backend/routes/departments');
+    departmentRoutes(req, res, next);
+  } catch (error) {
+    console.error('Error loading department routes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load departments module',
+      error: error.message
+    });
+  }
+});
+
+app.use('/api/contracts', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    const contractRoutes = require('../backend/routes/contracts');
+    contractRoutes(req, res, next);
+  } catch (error) {
+    console.error('Error loading contract routes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load contracts module',
+      error: error.message
+    });
+  }
+});
+
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
-  
-  if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map(e => e.message);
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors
-    });
-  }
-  
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format'
-    });
-  }
-  
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(400).json({
-      success: false,
-      message: `${field} already exists`
-    });
-  }
-  
-  res.status(err.statusCode || 500).json({
+  res.status(500).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
-// 404 handler cho API routes
-app.use('/api/*', (req, res) => {
+// 404 handler
+app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'API route not found',
+    message: 'Route not found',
     path: req.originalUrl
   });
 });
 
-// Export handler cho Vercel
+// Export for Vercel
 module.exports = app;
-
-// Nếu chạy local (development)
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  connectToDatabase().then(() => {
-    app.listen(PORT, () => {
-      console.log(`Development server running on port ${PORT}`);
-    });
-  });
-}
-
