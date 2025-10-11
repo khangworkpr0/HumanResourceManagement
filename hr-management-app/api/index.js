@@ -1,11 +1,10 @@
 /**
- * Vercel Serverless Function - API Entry Point
+ * Vercel Serverless Function - API Entry Point (Optimized for timeout)
  */
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 
@@ -17,7 +16,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection
+// MongoDB connection (cached)
 let cachedDb = null;
 
 async function connectToDatabase() {
@@ -29,101 +28,89 @@ async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      console.warn('MONGODB_URI not defined');
-      return null;
+      throw new Error('MONGODB_URI not defined');
     }
 
-    console.log('=> Creating new database connection');
+    console.log('=> Connecting to MongoDB...');
+    
+    // Quick connection settings
     await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 8000,
+      socketTimeoutMS: 20000,
+      maxPoolSize: 5,
+      minPoolSize: 1
     });
 
     cachedDb = mongoose.connection;
-    console.log(`MongoDB Connected: ${cachedDb.host}`);
+    console.log('✅ MongoDB Connected');
     return cachedDb;
   } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    return null;
+    console.error('❌ MongoDB error:', error.message);
+    throw error;
   }
 }
 
-// Middleware to connect DB before routes
-app.use(async (req, res, next) => {
+// Health check - NO DB connection (fast response)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'API is running',
+    timestamp: new Date().toISOString(),
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    envCheck: {
+      mongodbUri: !!process.env.MONGODB_URI,
+      jwtSecret: !!process.env.JWT_SECRET
+    }
+  });
+});
+
+// Root
+app.get('/api', (req, res) => {
+  res.json({ success: true, message: 'HR Management API v1.0' });
+});
+
+// Connect DB middleware (only for specific routes)
+const dbMiddleware = async (req, res, next) => {
   try {
     await connectToDatabase();
     next();
   } catch (error) {
-    console.error('Database connection failed:', error);
     res.status(500).json({
       success: false,
       message: 'Database connection failed',
-      error: error.message
+      error: error.message,
+      hint: 'Check MongoDB Atlas and MONGODB_URI'
     });
   }
-});
+};
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'HR Management System API is running on Vercel',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    mongodbUriExists: !!process.env.MONGODB_URI,
-    jwtSecretExists: !!process.env.JWT_SECRET
-  });
-});
+// Load routes
+let authRoutes, employeeRoutes, departmentRoutes, contractRoutes, employeeFileRoutes;
 
-// Root endpoint
-app.get('/api', (req, res) => {
-  res.json({
-    success: true,
-    message: 'HR Management API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      employees: '/api/employees',
-      departments: '/api/departments',
-      contracts: '/api/contracts'
-    }
-  });
-});
-
-// Import and use routes directly
 try {
-  const authRoutes = require('../backend/routes/auth');
-  app.use('/api/auth', authRoutes);
-  
-  const employeeRoutes = require('../backend/routes/employees');
-  app.use('/api/employees', employeeRoutes);
-  
-  const employeeFileRoutes = require('../backend/routes/employeeFiles');
-  app.use('/api/employees', employeeFileRoutes);
-  
-  const departmentRoutes = require('../backend/routes/departments');
-  app.use('/api/departments', departmentRoutes);
-  
-  const contractRoutes = require('../backend/routes/contracts');
-  app.use('/api/contracts', contractRoutes);
-  
-  console.log('✅ All routes loaded successfully');
+  authRoutes = require('../backend/routes/auth');
+  employeeRoutes = require('../backend/routes/employees');
+  departmentRoutes = require('../backend/routes/departments');
+  contractRoutes = require('../backend/routes/contracts');
+  employeeFileRoutes = require('../backend/routes/employeeFiles');
+  console.log('✅ All routes loaded');
 } catch (error) {
   console.error('❌ Error loading routes:', error.message);
-  // Routes will not be available but health check will work
 }
 
-// Error handling
+// Mount routes with DB middleware
+if (authRoutes) app.use('/api/auth', dbMiddleware, authRoutes);
+if (employeeRoutes) app.use('/api/employees', dbMiddleware, employeeRoutes);
+if (employeeFileRoutes) app.use('/api/employees', dbMiddleware, employeeFileRoutes);
+if (departmentRoutes) app.use('/api/departments', dbMiddleware, departmentRoutes);
+if (contractRoutes) app.use('/api/contracts', dbMiddleware, contractRoutes);
+
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
+  console.error('Error:', err);
   res.status(500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message || 'Server error'
   });
 });
 
@@ -131,7 +118,7 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found',
+    message: 'Not found',
     path: req.originalUrl
   });
 });
