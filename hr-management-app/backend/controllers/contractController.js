@@ -1,4 +1,11 @@
-const puppeteer = require('puppeteer');
+// Puppeteer is optional - only for PDF generation
+let puppeteer = null;
+try {
+  puppeteer = require('puppeteer');
+} catch (error) {
+  console.warn('Puppeteer not available - PDF generation will be disabled');
+}
+
 const fs = require('fs');
 const path = require('path');
 const handlebars = require('handlebars');
@@ -9,6 +16,15 @@ const User = require('../models/User');
 // @access  Private (HR and Admin only)
 const generateContract = async (req, res) => {
   try {
+    // Check if puppeteer is available
+    if (!puppeteer) {
+      return res.status(503).json({
+        success: false,
+        message: 'PDF generation is not available in this environment. Use the simple HTML version instead.',
+        hint: 'Try using /api/contracts/generate-simple endpoint'
+      });
+    }
+    
     const { employeeId, contractType } = req.body;
     
     if (!employeeId || !contractType) {
