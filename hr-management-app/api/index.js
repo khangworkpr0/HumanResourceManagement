@@ -207,11 +207,5 @@ app.use('*', (req, res) => {
   });
 });
 
-// Pre-connect database on cold start (optional but recommended)
-// This helps reduce latency on first request
-connectToDatabase().catch(err => {
-  console.error('⚠️ Pre-connection failed (non-fatal):', err.message);
-});
-
 // Export for Vercel
 module.exports = app;
