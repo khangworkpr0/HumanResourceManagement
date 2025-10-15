@@ -16,58 +16,113 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection (cached)
+// GLOBAL cached connection for serverless (persists across invocations)
 let cachedDb = null;
+let connectionPromise = null;
 
 async function connectToDatabase() {
+  // Return cached connection if already connected
   if (cachedDb && mongoose.connection.readyState === 1) {
-    console.log('=> Using cached database connection');
+    console.log('✅ Using cached database connection');
     return cachedDb;
   }
 
-  try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      throw new Error('MONGODB_URI not defined');
+  // If connection is in progress, wait for it
+  if (connectionPromise) {
+    console.log('⏳ Waiting for ongoing connection...');
+    return connectionPromise;
+  }
+
+  // Create new connection
+  connectionPromise = (async () => {
+    try {
+      const uri = process.env.MONGODB_URI;
+      if (!uri) {
+        throw new Error('MONGODB_URI not defined in environment variables');
+      }
+
+      console.log('🔌 Connecting to MongoDB Atlas...');
+      
+      // CRITICAL: Disable buffering to prevent timeout errors in serverless
+      mongoose.set('bufferCommands', false);
+      
+      // Optimized settings for Vercel serverless
+      const options = {
+        serverSelectionTimeoutMS: 10000, // 10s timeout
+        socketTimeoutMS: 45000,
+        family: 4, // Use IPv4, skip IPv6
+        maxPoolSize: 10,
+        minPoolSize: 1
+      };
+
+      // Only connect if not already connected/connecting
+      if (mongoose.connection.readyState === 0) {
+        await mongoose.connect(uri, options);
+      }
+
+      cachedDb = mongoose.connection;
+      
+      console.log('✅ MongoDB Connected Successfully');
+      console.log(`   DB Host: ${mongoose.connection.host}`);
+      console.log(`   DB Name: ${mongoose.connection.name}`);
+      
+      return cachedDb;
+    } catch (error) {
+      cachedDb = null;
+      connectionPromise = null;
+      console.error('❌ MongoDB Connection Error:', error.message);
+      throw error;
+    } finally {
+      connectionPromise = null;
     }
+  })();
 
-    console.log('=> Connecting to MongoDB...');
-    
-    // Set buffer timeout BEFORE connecting
-    mongoose.set('bufferTimeoutMS', 30000);
-    mongoose.set('bufferCommands', false);
-    
-    // Optimized settings for serverless with longer timeouts
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 15000,
-      maxPoolSize: 5,
-      minPoolSize: 1,
-      maxIdleTimeMS: 60000
-    });
-
-    cachedDb = mongoose.connection;
-    console.log('✅ MongoDB Connected');
-    return cachedDb;
-  } catch (error) {
-    console.error('❌ MongoDB error:', error.message);
-    throw error;
-  }
+  return connectionPromise;
 }
 
 // Health check - NO DB connection (fast response)
 app.get('/api/health', (req, res) => {
+  const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
   res.status(200).json({
     success: true,
     message: 'API is running',
     timestamp: new Date().toISOString(),
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    dbStatus: dbState[mongoose.connection.readyState] || 'unknown',
+    dbReadyState: mongoose.connection.readyState,
     envCheck: {
       mongodbUri: !!process.env.MONGODB_URI,
-      jwtSecret: !!process.env.JWT_SECRET
+      jwtSecret: !!process.env.JWT_SECRET,
+      mongodbUriFormat: process.env.MONGODB_URI ? 
+        (process.env.MONGODB_URI.startsWith('mongodb+srv://') ? 'valid' : 'invalid - should start with mongodb+srv://') 
+        : 'missing'
     }
   });
+});
+
+// Test DB connection endpoint
+app.get('/api/test-db', async (req, res) => {
+  try {
+    await connectToDatabase();
+    
+    // Try a simple query to verify connection works
+    const User = require('../backend/models/User');
+    const count = await User.countDocuments();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Database connection successful',
+      dbHost: mongoose.connection.host,
+      dbName: mongoose.connection.name,
+      userCount: count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
 // Root
@@ -78,15 +133,36 @@ app.get('/api', (req, res) => {
 // Connect DB middleware (only for specific routes)
 const dbMiddleware = async (req, res, next) => {
   try {
+    // Ensure database is connected before processing request
     await connectToDatabase();
+    
+    // Double check connection is ready
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database not ready');
+    }
+    
     next();
   } catch (error) {
-    res.status(500).json({
+    console.error('❌ DB Middleware Error:', error.message);
+    
+    const errorResponse = {
       success: false,
       message: 'Database connection failed',
       error: error.message,
-      hint: 'Check MongoDB Atlas and MONGODB_URI'
-    });
+      hints: [
+        'Check MONGODB_URI in Vercel environment variables',
+        'Ensure MongoDB Atlas IP whitelist includes 0.0.0.0/0',
+        'Verify database user credentials are correct',
+        'Check if MongoDB cluster is running'
+      ]
+    };
+    
+    // Add more details in development
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.stack = error.stack;
+    }
+    
+    res.status(503).json(errorResponse);
   }
 };
 
