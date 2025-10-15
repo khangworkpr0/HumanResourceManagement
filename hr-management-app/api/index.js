@@ -23,7 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // GLOBAL cached connection for serverless (persists across invocations)
 let cachedDb = null;
-let connectionPromise = null;
 
 async function connectToDatabase() {
   // Return cached connection if already connected
@@ -32,54 +31,54 @@ async function connectToDatabase() {
     return cachedDb;
   }
 
-  // If connection is in progress, wait for it
-  if (connectionPromise) {
-    console.log('⏳ Waiting for ongoing connection...');
-    return connectionPromise;
+  // Check if connecting
+  if (mongoose.connection.readyState === 2) {
+    console.log('⏳ Connection in progress, waiting...');
+    // Wait for connection to complete
+    await new Promise((resolve) => {
+      mongoose.connection.once('connected', resolve);
+      mongoose.connection.once('error', resolve);
+    });
+    if (mongoose.connection.readyState === 1) {
+      cachedDb = mongoose.connection;
+      return cachedDb;
+    }
   }
 
-  // Create new connection
-  connectionPromise = (async () => {
-    try {
-      const uri = process.env.MONGODB_URI;
-      if (!uri) {
-        throw new Error('MONGODB_URI not defined in environment variables');
-      }
-
-      console.log('🔌 Connecting to MongoDB Atlas...');
-      
-      // Optimized settings for Vercel serverless
-      const options = {
-        serverSelectionTimeoutMS: 10000, // 10s timeout
-        socketTimeoutMS: 45000,
-        family: 4, // Use IPv4, skip IPv6
-        maxPoolSize: 10,
-        minPoolSize: 1
-      };
-
-      // Only connect if not already connected/connecting
-      if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(uri, options);
-      }
-
-      cachedDb = mongoose.connection;
-      
-      console.log('✅ MongoDB Connected Successfully');
-      console.log(`   DB Host: ${mongoose.connection.host}`);
-      console.log(`   DB Name: ${mongoose.connection.name}`);
-      
-      return cachedDb;
-    } catch (error) {
-      cachedDb = null;
-      connectionPromise = null;
-      console.error('❌ MongoDB Connection Error:', error.message);
-      throw error;
-    } finally {
-      connectionPromise = null;
+  try {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI not defined in environment variables');
     }
-  })();
 
-  return connectionPromise;
+    console.log('🔌 Connecting to MongoDB Atlas...');
+    
+    // Optimized settings for Vercel serverless
+    const options = {
+      serverSelectionTimeoutMS: 10000, // 10s timeout
+      socketTimeoutMS: 45000,
+      family: 4, // Use IPv4, skip IPv6
+      maxPoolSize: 10,
+      minPoolSize: 1
+    };
+
+    // Only connect if not already connected/connecting
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(uri, options);
+    }
+
+    cachedDb = mongoose.connection;
+    
+    console.log('✅ MongoDB Connected Successfully');
+    console.log(`   DB Host: ${mongoose.connection.host}`);
+    console.log(`   DB Name: ${mongoose.connection.name}`);
+    
+    return cachedDb;
+  } catch (error) {
+    cachedDb = null;
+    console.error('❌ MongoDB Connection Error:', error.message);
+    throw error;
+  }
 }
 
 // Health check - NO DB connection (fast response)
@@ -129,7 +128,16 @@ app.get('/api/test-db', async (req, res) => {
 
 // Root
 app.get('/api', (req, res) => {
-  res.json({ success: true, message: 'HR Management API v1.0' });
+  res.json({ 
+    success: true, 
+    message: 'HR Management API v1.0.1',
+    deployedAt: '2024-10-15 14:50',
+    bufferCommandsDisabled: true,
+    mongooseConfig: {
+      bufferCommands: false,
+      bufferTimeoutMS: 10000
+    }
+  });
 });
 
 // Connect DB middleware (only for specific routes)
