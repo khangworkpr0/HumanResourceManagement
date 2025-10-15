@@ -1,15 +1,11 @@
 /**
- * Vercel Serverless Function - API Entry Point (Optimized for timeout)
+ * Vercel Serverless Function - API Entry Point
+ * FIXED: Properly await MongoDB connection before loading models/routes
  */
 
 const express = require('express');
-const mongoose = require('mongoose');
+const connectDB = require('./db');
 const cors = require('cors');
-
-// CRITICAL: Disable buffering GLOBALLY before any model is loaded
-// This MUST be set before requiring any models to prevent timeout errors
-mongoose.set('bufferCommands', false);
-mongoose.set('bufferTimeoutMS', 10000);
 
 const app = express();
 
@@ -21,75 +17,54 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// GLOBAL cached connection for serverless (persists across invocations)
-let cachedDb = null;
+// Initialize app - will be started after DB connection
+let isInitialized = false;
 
-async function connectToDatabase() {
-  // Return cached connection if already connected
-  if (cachedDb && mongoose.connection.readyState === 1) {
-    console.log('✅ Using cached database connection');
-    return cachedDb;
-  }
-
-  // Check if connecting
-  if (mongoose.connection.readyState === 2) {
-    console.log('⏳ Connection in progress, waiting...');
-    // Wait for connection to complete
-    await new Promise((resolve) => {
-      mongoose.connection.once('connected', resolve);
-      mongoose.connection.once('error', resolve);
-    });
-    if (mongoose.connection.readyState === 1) {
-      cachedDb = mongoose.connection;
-      return cachedDb;
-    }
+async function initializeApp() {
+  if (isInitialized) {
+    return;
   }
 
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      throw new Error('MONGODB_URI not defined in environment variables');
-    }
-
-    console.log('🔌 Connecting to MongoDB Atlas...');
+    // STEP 1: Connect to database FIRST
+    console.log('🚀 Initializing application...');
+    await connectDB();
     
-    // Optimized settings for Vercel serverless
-    const options = {
-      serverSelectionTimeoutMS: 10000, // 10s timeout
-      socketTimeoutMS: 45000,
-      family: 4, // Use IPv4, skip IPv6
-      maxPoolSize: 10,
-      minPoolSize: 1
-    };
-
-    // Only connect if not already connected/connecting
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(uri, options);
-    }
-
-    cachedDb = mongoose.connection;
+    // STEP 2: NOW load routes (which require models)
+    // Models are safe to use now because connection is ready
+    const authRoutes = require('../backend/routes/auth');
+    const employeeRoutes = require('../backend/routes/employees');
+    const departmentRoutes = require('../backend/routes/departments');
+    const contractRoutes = require('../backend/routes/contracts');
+    const employeeFileRoutes = require('../backend/routes/employeeFiles');
     
-    console.log('✅ MongoDB Connected Successfully');
-    console.log(`   DB Host: ${mongoose.connection.host}`);
-    console.log(`   DB Name: ${mongoose.connection.name}`);
+    // STEP 3: Mount routes
+    app.use('/api/auth', authRoutes);
+    app.use('/api/employees', employeeRoutes);
+    app.use('/api/employees', employeeFileRoutes);
+    app.use('/api/departments', departmentRoutes);
+    app.use('/api/contracts', contractRoutes);
     
-    return cachedDb;
+    console.log('✅ All routes loaded successfully');
+    isInitialized = true;
   } catch (error) {
-    cachedDb = null;
-    console.error('❌ MongoDB Connection Error:', error.message);
+    console.error('❌ Failed to initialize app:', error);
     throw error;
   }
 }
 
-// Health check - NO DB connection (fast response)
+// Health check - Fast response without requiring DB
 app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
   res.status(200).json({
     success: true,
     message: 'API is running',
+    version: '2.0.0 - Fixed connection flow',
     timestamp: new Date().toISOString(),
     dbStatus: dbState[mongoose.connection.readyState] || 'unknown',
     dbReadyState: mongoose.connection.readyState,
+    initialized: isInitialized,
     envCheck: {
       mongodbUri: !!process.env.MONGODB_URI,
       jwtSecret: !!process.env.JWT_SECRET,
@@ -103,99 +78,70 @@ app.get('/api/health', (req, res) => {
 // Test DB connection endpoint
 app.get('/api/test-db', async (req, res) => {
   try {
-    await connectToDatabase();
+    await initializeApp();
     
-    // Try a simple query to verify connection works
+    const mongoose = require('mongoose');
     const User = require('../backend/models/User');
     const count = await User.countDocuments();
     
     res.status(200).json({
       success: true,
-      message: 'Database connection successful',
+      message: 'Database connection and query successful',
       dbHost: mongoose.connection.host,
       dbName: mongoose.connection.name,
+      dbReadyState: mongoose.connection.readyState,
       userCount: count
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Database connection failed',
+      message: 'Database test failed',
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
 
-// Root
+// Root endpoint
 app.get('/api', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'HR Management API v1.0.1',
-    deployedAt: '2024-10-15 14:50',
-    bufferCommandsDisabled: true,
-    mongooseConfig: {
-      bufferCommands: false,
-      bufferTimeoutMS: 10000
-    }
+    message: 'HR Management API v2.0.0 - Connection Flow Fixed',
+    deployedAt: new Date().toISOString(),
+    fix: 'Proper async connection initialization before routes',
+    initialized: isInitialized
   });
 });
 
-// Connect DB middleware (only for specific routes)
-const dbMiddleware = async (req, res, next) => {
+// Middleware to ensure app is initialized before processing requests
+const ensureInitialized = async (req, res, next) => {
   try {
-    // Ensure database is connected before processing request
-    await connectToDatabase();
-    
-    // Double check connection is ready
-    if (mongoose.connection.readyState !== 1) {
-      throw new Error('Database not ready');
-    }
-    
+    await initializeApp();
     next();
   } catch (error) {
-    console.error('❌ DB Middleware Error:', error.message);
-    
-    const errorResponse = {
+    console.error('❌ Initialization Error:', error);
+    res.status(503).json({
       success: false,
-      message: 'Database connection failed',
+      message: 'Service initialization failed',
       error: error.message,
       hints: [
-        'Check MONGODB_URI in Vercel environment variables',
-        'Ensure MongoDB Atlas IP whitelist includes 0.0.0.0/0',
-        'Verify database user credentials are correct',
-        'Check if MongoDB cluster is running'
+        'Check MONGODB_URI in environment variables',
+        'Ensure MongoDB Atlas is accessible',
+        'Verify IP whitelist includes 0.0.0.0/0',
+        'Check database credentials'
       ]
-    };
-    
-    // Add more details in development
-    if (process.env.NODE_ENV === 'development') {
-      errorResponse.stack = error.stack;
-    }
-    
-    res.status(503).json(errorResponse);
+    });
   }
 };
 
-// Load routes
-let authRoutes, employeeRoutes, departmentRoutes, contractRoutes, employeeFileRoutes;
-
-try {
-  authRoutes = require('../backend/routes/auth');
-  employeeRoutes = require('../backend/routes/employees');
-  departmentRoutes = require('../backend/routes/departments');
-  contractRoutes = require('../backend/routes/contracts');
-  employeeFileRoutes = require('../backend/routes/employeeFiles');
-  console.log('✅ All routes loaded');
-} catch (error) {
-  console.error('❌ Error loading routes:', error.message);
-}
-
-// Mount routes with DB middleware
-if (authRoutes) app.use('/api/auth', dbMiddleware, authRoutes);
-if (employeeRoutes) app.use('/api/employees', dbMiddleware, employeeRoutes);
-if (employeeFileRoutes) app.use('/api/employees', dbMiddleware, employeeFileRoutes);
-if (departmentRoutes) app.use('/api/departments', dbMiddleware, departmentRoutes);
-if (contractRoutes) app.use('/api/contracts', dbMiddleware, contractRoutes);
+// Apply initialization middleware to all API routes (except health check)
+app.use('/api/*', (req, res, next) => {
+  // Skip health check
+  if (req.path === '/api/health' || req.path === '/health') {
+    return next();
+  }
+  return ensureInitialized(req, res, next);
+});
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -215,5 +161,11 @@ app.use('*', (req, res) => {
   });
 });
 
-// Export for Vercel
+// Pre-initialize on cold start to reduce first-request latency
+initializeApp().catch(err => {
+  console.error('⚠️ Pre-initialization failed:', err.message);
+  // Non-fatal - will retry on first request
+});
+
+// Export for Vercel serverless
 module.exports = app;
