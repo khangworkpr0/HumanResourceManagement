@@ -6,6 +6,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+// CRITICAL: Disable buffering GLOBALLY before any model is loaded
+// This MUST be set before requiring any models to prevent timeout errors
+mongoose.set('bufferCommands', false);
+mongoose.set('bufferTimeoutMS', 10000);
+
 const app = express();
 
 // Middleware
@@ -42,9 +47,6 @@ async function connectToDatabase() {
       }
 
       console.log('🔌 Connecting to MongoDB Atlas...');
-      
-      // CRITICAL: Disable buffering to prevent timeout errors in serverless
-      mongoose.set('bufferCommands', false);
       
       // Optimized settings for Vercel serverless
       const options = {
@@ -203,6 +205,12 @@ app.use('*', (req, res) => {
     message: 'Not found',
     path: req.originalUrl
   });
+});
+
+// Pre-connect database on cold start (optional but recommended)
+// This helps reduce latency on first request
+connectToDatabase().catch(err => {
+  console.error('⚠️ Pre-connection failed (non-fatal):', err.message);
 });
 
 // Export for Vercel
