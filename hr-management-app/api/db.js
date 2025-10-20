@@ -42,8 +42,7 @@ const connectDB = async () => {
       maxPoolSize: 10,                  // Max connections in pool
       minPoolSize: 1,                   // Min connections to maintain
       retryWrites: true,                // Retry failed writes
-      w: 'majority',                    // Write concern
-      bufferMaxEntries: 0               // Disable buffering (fail fast)
+      w: 'majority'                     // Write concern
     };
 
     // AWAIT connection before proceeding
