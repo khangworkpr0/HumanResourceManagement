@@ -1,10 +1,15 @@
 /**
  * Vercel Serverless Function - API Entry Point
  * FIXED: Properly await MongoDB connection before loading models/routes
+ * 
+ * CRITICAL: Import db.js FIRST to ensure mongoose.set('bufferCommands', false)
+ * is called before any models are defined
  */
 
-const express = require('express');
+// Import db.js FIRST - this sets bufferCommands = false on global mongoose
 const connectDB = require('./db');
+
+const express = require('express');
 const cors = require('cors');
 
 const app = express();
@@ -62,8 +67,17 @@ async function initializeApp() {
     
     console.log('✅ Database connected');
     
-    // STEP 2: Load routes AFTER DB is connected
-    // This ensures models can be defined safely when routes/controllers import them
+    // STEP 2: Verify mongoose is properly configured
+    const mongoose = require('mongoose');
+    console.log(`📊 Mongoose bufferCommands: ${mongoose.get('bufferCommands')}`);
+    console.log(`📊 Connection readyState: ${mongoose.connection.readyState}`);
+    
+    if (mongoose.get('bufferCommands') !== false) {
+      console.warn('⚠️ WARNING: bufferCommands should be false!');
+    }
+    
+    // STEP 3: Load routes AFTER DB is connected
+    // This ensures models are defined on the connected mongoose instance
     loadRoutes();
     
     console.log('✅ App fully initialized');

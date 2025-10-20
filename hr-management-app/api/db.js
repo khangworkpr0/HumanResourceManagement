@@ -1,12 +1,17 @@
 /**
  * MongoDB Connection Module for Vercel Serverless
  * Ensures connection is fully ready before allowing queries
+ * 
+ * IMPORTANT: This file MUST be imported first to ensure:
+ * 1. mongoose.set('bufferCommands', false) is set globally
+ * 2. All models use the same mongoose instance with this connection
  */
 
 const mongoose = require('mongoose');
 
 // CRITICAL: Disable buffering BEFORE any connection attempt
 // This prevents queries from buffering while connection is establishing
+// This is set on the DEFAULT mongoose instance that all models will use
 mongoose.set('bufferCommands', false);
 
 let cachedConnection = null;
