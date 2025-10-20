@@ -24,36 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize app - will be started after DB connection
 let isInitialized = false;
-let routesLoaded = false;
-
-// Load routes function - will be called AFTER DB connection
-function loadRoutes() {
-  if (routesLoaded) {
-    return;
-  }
-  
-  try {
-    console.log('📦 Loading routes (after DB connection)...');
-    const authRoutes = require('../backend/routes/auth');
-    const employeeRoutes = require('../backend/routes/employees');
-    const departmentRoutes = require('../backend/routes/departments');
-    const contractRoutes = require('../backend/routes/contracts');
-    const employeeFileRoutes = require('../backend/routes/employeeFiles');
-    
-    // Mount routes - DB already connected, models can be defined safely
-    app.use('/api/auth', authRoutes);
-    app.use('/api/employees', employeeRoutes);
-    app.use('/api/employees', employeeFileRoutes);
-    app.use('/api/departments', departmentRoutes);
-    app.use('/api/contracts', contractRoutes);
-    
-    console.log('✅ All routes loaded successfully');
-    routesLoaded = true;
-  } catch (error) {
-    console.error('❌ Failed to load routes:', error);
-    throw error;
-  }
-}
+let routesCache = {};
 
 async function initializeApp() {
   if (isInitialized) {
@@ -61,13 +32,13 @@ async function initializeApp() {
   }
 
   try {
-    // STEP 1: Connect to database FIRST (before loading routes)
+    // Connect to database
     console.log('🚀 Initializing application...');
     await connectDB();
     
     console.log('✅ Database connected');
     
-    // STEP 2: Verify mongoose is properly configured
+    // Verify mongoose is properly configured
     const mongoose = require('mongoose');
     console.log(`📊 Mongoose bufferCommands: ${mongoose.get('bufferCommands')}`);
     console.log(`📊 Connection readyState: ${mongoose.connection.readyState}`);
@@ -75,10 +46,6 @@ async function initializeApp() {
     if (mongoose.get('bufferCommands') !== false) {
       console.warn('⚠️ WARNING: bufferCommands should be false!');
     }
-    
-    // STEP 3: Load routes AFTER DB is connected
-    // This ensures models are defined on the connected mongoose instance
-    loadRoutes();
     
     console.log('✅ App fully initialized');
     isInitialized = true;
@@ -91,7 +58,7 @@ async function initializeApp() {
 // Middleware to ensure app is initialized before processing requests
 const ensureInitialized = async (req, res, next) => {
   try {
-    // Ensure DB is connected and routes are loaded before processing request
+    // Ensure DB is connected before processing request
     await initializeApp();
     
     // Double-check connection is actually ready
@@ -100,12 +67,7 @@ const ensureInitialized = async (req, res, next) => {
       throw new Error(`Database not ready. ReadyState: ${mongoose.connection.readyState}`);
     }
     
-    // Double-check routes are loaded
-    if (!routesLoaded) {
-      throw new Error('Routes not loaded yet');
-    }
-    
-    console.log('✅ Request authorized, DB ready, routes loaded');
+    console.log('✅ DB ready, processing request');
     next();
   } catch (error) {
     console.error('❌ Initialization Error:', error);
@@ -134,9 +96,38 @@ const ensureInitialized = async (req, res, next) => {
   }
 };
 
-// Apply initialization middleware to all /api/* routes
-// This ensures DB is connected and routes are loaded before any API request
-app.use('/api/*', ensureInitialized);
+// Lazy route loader - loads routes AFTER DB connection
+function getRoutes(name) {
+  if (!routesCache[name]) {
+    console.log(`📦 Loading ${name} routes...`);
+    routesCache[name] = require(`../backend/routes/${name}`);
+  }
+  return routesCache[name];
+}
+
+// Mount route handlers with lazy loading
+// Routes are registered immediately, but controllers (and models) are only loaded AFTER ensureInitialized
+app.use('/api/auth', ensureInitialized, (req, res, next) => {
+  getRoutes('auth')(req, res, next);
+});
+
+app.use('/api/employees', ensureInitialized, (req, res, next) => {
+  getRoutes('employees')(req, res, next);
+});
+
+app.use('/api/employees', ensureInitialized, (req, res, next) => {
+  getRoutes('employeeFiles')(req, res, next);
+});
+
+app.use('/api/departments', ensureInitialized, (req, res, next) => {
+  getRoutes('departments')(req, res, next);
+});
+
+app.use('/api/contracts', ensureInitialized, (req, res, next) => {
+  getRoutes('contracts')(req, res, next);
+});
+
+console.log('✅ Route handlers registered (will load on first request)');
 
 // Health check - Fast response without requiring DB
 app.get('/api/health', (req, res) => {
@@ -145,12 +136,12 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'API is running',
-    version: '2.2.0 - Fixed route loading order',
+    version: '2.3.0 - Lazy route loading',
     timestamp: new Date().toISOString(),
     dbStatus: dbState[mongoose.connection.readyState] || 'unknown',
     dbReadyState: mongoose.connection.readyState,
     initialized: isInitialized,
-    routesLoaded: routesLoaded,
+    routesCached: Object.keys(routesCache).length,
     envCheck: {
       mongodbUri: !!process.env.MONGODB_URI,
       jwtSecret: !!process.env.JWT_SECRET,
@@ -213,8 +204,7 @@ app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'Not found',
-    path: req.originalUrl,
-    hint: 'Routes are loaded on first request. Try calling /api/health first.'
+    path: req.originalUrl
   });
 });
 
