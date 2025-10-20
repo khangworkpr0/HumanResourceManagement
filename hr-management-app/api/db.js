@@ -22,7 +22,9 @@ const connectDB = async () => {
     // Debug: Log connection string (masked password)
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
+      const error = new Error('MONGODB_URI is not defined in environment variables');
+      error.code = 'ENV_VAR_MISSING';
+      throw error;
     }
     
     const maskedUri = uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
@@ -36,7 +38,7 @@ const connectDB = async () => {
 
     // CRITICAL: Connection options optimized for Vercel serverless
     const options = {
-      serverSelectionTimeoutMS: 10000, // Fail fast if can't connect in 10s
+      serverSelectionTimeoutMS: 15000, // Increased to 15s for slow connections
       socketTimeoutMS: 45000,           // Socket timeout
       family: 4,                        // Use IPv4, skip IPv6
       maxPoolSize: 10,                  // Max connections in pool
@@ -45,8 +47,15 @@ const connectDB = async () => {
       w: 'majority'                     // Write concern
     };
 
+    console.log('⏳ Attempting connection...');
+    
     // AWAIT connection before proceeding
     const conn = await mongoose.connect(uri, options);
+    
+    // Verify connection is actually ready
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error(`Connection succeeded but not ready. ReadyState: ${mongoose.connection.readyState}`);
+    }
     
     // Cache the connection
     cachedConnection = conn.connection;
@@ -59,8 +68,24 @@ const connectDB = async () => {
     return cachedConnection;
   } catch (error) {
     cachedConnection = null;
-    console.error('❌ MongoDB Connection Error:', error.message);
-    console.error('   Stack:', error.stack);
+    
+    // Enhanced error logging
+    console.error('❌ MongoDB Connection Error:');
+    console.error('   Message:', error.message);
+    console.error('   Name:', error.name);
+    console.error('   Code:', error.code || 'UNKNOWN');
+    
+    // Provide helpful hints based on error type
+    if (error.message.includes('bad auth')) {
+      console.error('💡 Hint: Check username/password in MONGODB_URI');
+      error.hint = 'Invalid credentials - check MONGODB_URI username/password';
+    } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+      console.error('💡 Hint: Cannot resolve MongoDB host - check cluster address');
+      error.hint = 'Cannot reach MongoDB cluster - check network/firewall';
+    } else if (error.message.includes('Authentication failed')) {
+      console.error('💡 Hint: MongoDB credentials are incorrect');
+      error.hint = 'Authentication failed - create new database user';
+    }
     
     // In serverless, don't exit process, just throw
     throw error;

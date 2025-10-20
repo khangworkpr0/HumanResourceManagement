@@ -42,19 +42,39 @@ async function initializeApp() {
 // Middleware to ensure app is initialized before processing requests
 const ensureInitialized = async (req, res, next) => {
   try {
+    // Ensure DB is connected before processing request
     await initializeApp();
+    
+    // Double-check connection is actually ready
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error(`Database not ready. ReadyState: ${mongoose.connection.readyState}`);
+    }
+    
+    console.log('✅ Request authorized, DB ready');
     next();
   } catch (error) {
     console.error('❌ Initialization Error:', error);
+    console.error('   Error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    });
+    
     res.status(503).json({
       success: false,
       message: 'Service initialization failed',
       error: error.message,
+      details: {
+        errorName: error.name,
+        errorCode: error.code || 'UNKNOWN'
+      },
       hints: [
         'Check MONGODB_URI in environment variables',
-        'Ensure MongoDB Atlas is accessible',
-        'Verify IP whitelist includes 0.0.0.0/0',
-        'Check database credentials'
+        'Ensure MongoDB credentials are correct',
+        'Verify MongoDB Atlas is accessible',
+        'Check IP whitelist includes 0.0.0.0/0',
+        'Ensure database name is correct in URI'
       ]
     });
   }
