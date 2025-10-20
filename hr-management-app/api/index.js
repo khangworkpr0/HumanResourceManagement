@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize app - will be started after DB connection
 let isInitialized = false;
+let routesLoaded = false;
 
 async function initializeApp() {
   if (isInitialized) {
@@ -30,28 +31,66 @@ async function initializeApp() {
     console.log('🚀 Initializing application...');
     await connectDB();
     
-    // STEP 2: NOW load routes (which require models)
-    // Models are safe to use now because connection is ready
-    const authRoutes = require('../backend/routes/auth');
-    const employeeRoutes = require('../backend/routes/employees');
-    const departmentRoutes = require('../backend/routes/departments');
-    const contractRoutes = require('../backend/routes/contracts');
-    const employeeFileRoutes = require('../backend/routes/employeeFiles');
-    
-    // STEP 3: Mount routes
-    app.use('/api/auth', authRoutes);
-    app.use('/api/employees', employeeRoutes);
-    app.use('/api/employees', employeeFileRoutes);
-    app.use('/api/departments', departmentRoutes);
-    app.use('/api/contracts', contractRoutes);
-    
-    console.log('✅ All routes loaded successfully');
+    console.log('✅ Database connected, app initialized');
     isInitialized = true;
   } catch (error) {
     console.error('❌ Failed to initialize app:', error);
     throw error;
   }
 }
+
+// Middleware to ensure app is initialized before processing requests
+const ensureInitialized = async (req, res, next) => {
+  try {
+    await initializeApp();
+    next();
+  } catch (error) {
+    console.error('❌ Initialization Error:', error);
+    res.status(503).json({
+      success: false,
+      message: 'Service initialization failed',
+      error: error.message,
+      hints: [
+        'Check MONGODB_URI in environment variables',
+        'Ensure MongoDB Atlas is accessible',
+        'Verify IP whitelist includes 0.0.0.0/0',
+        'Check database credentials'
+      ]
+    });
+  }
+};
+
+// Load routes immediately (not inside async function)
+function loadRoutes() {
+  if (routesLoaded) {
+    return;
+  }
+  
+  try {
+    console.log('📦 Loading routes...');
+    const authRoutes = require('../backend/routes/auth');
+    const employeeRoutes = require('../backend/routes/employees');
+    const departmentRoutes = require('../backend/routes/departments');
+    const contractRoutes = require('../backend/routes/contracts');
+    const employeeFileRoutes = require('../backend/routes/employeeFiles');
+    
+    // Mount routes with DB initialization middleware
+    app.use('/api/auth', ensureInitialized, authRoutes);
+    app.use('/api/employees', ensureInitialized, employeeRoutes);
+    app.use('/api/employees', ensureInitialized, employeeFileRoutes);
+    app.use('/api/departments', ensureInitialized, departmentRoutes);
+    app.use('/api/contracts', ensureInitialized, contractRoutes);
+    
+    console.log('✅ All routes loaded successfully');
+    routesLoaded = true;
+  } catch (error) {
+    console.error('❌ Failed to load routes:', error);
+    throw error;
+  }
+}
+
+// Load routes FIRST - before any request handlers
+loadRoutes();
 
 // Health check - Fast response without requiring DB
 app.get('/api/health', (req, res) => {
@@ -60,11 +99,12 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'API is running',
-    version: '2.0.0 - Fixed connection flow',
+    version: '2.1.0 - Fixed routing flow',
     timestamp: new Date().toISOString(),
     dbStatus: dbState[mongoose.connection.readyState] || 'unknown',
     dbReadyState: mongoose.connection.readyState,
     initialized: isInitialized,
+    routesLoaded: routesLoaded,
     envCheck: {
       mongodbUri: !!process.env.MONGODB_URI,
       jwtSecret: !!process.env.JWT_SECRET,
@@ -111,36 +151,6 @@ app.get('/api', (req, res) => {
     fix: 'Proper async connection initialization before routes',
     initialized: isInitialized
   });
-});
-
-// Middleware to ensure app is initialized before processing requests
-const ensureInitialized = async (req, res, next) => {
-  try {
-    await initializeApp();
-    next();
-  } catch (error) {
-    console.error('❌ Initialization Error:', error);
-    res.status(503).json({
-      success: false,
-      message: 'Service initialization failed',
-      error: error.message,
-      hints: [
-        'Check MONGODB_URI in environment variables',
-        'Ensure MongoDB Atlas is accessible',
-        'Verify IP whitelist includes 0.0.0.0/0',
-        'Check database credentials'
-      ]
-    });
-  }
-};
-
-// Apply initialization middleware to all API routes (except health check)
-app.use('/api/*', (req, res, next) => {
-  // Skip health check
-  if (req.path === '/api/health' || req.path === '/health') {
-    return next();
-  }
-  return ensureInitialized(req, res, next);
 });
 
 // Error handler
